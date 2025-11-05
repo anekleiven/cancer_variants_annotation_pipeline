@@ -6,15 +6,12 @@ This README explains the repository layout, required input data, how to run the 
 
 ## Repository layout
 
-- `data/` — input data. The repository contains example filenames but you must provide/download the required data files (see "Data requirements")
-- `data_cache/` — cached intermediate data (RDS, serialized objects)
 - `scripts/` — pipeline scripts (Python and R)
   - `01_hotspots_long.py`
   - `02_annotate_hotspots.py`
   - `03_add_uniprot_mapping.R`
   - `04_annotate_protein_domains.py`
   - `05_annotate_functional_sites.py`
-- `output/` — pipeline outputs (annotated MAF/TSV etc.)
 
 ## Quick summary
 
@@ -32,7 +29,6 @@ Where to obtain common resources:
 - Cancer hotspots: https://www.cancerhotspots.org/#/home
 - Pfam (family definitions, clans): https://pfam.xfam.org/
 - UniProt mappings and accession lists: https://www.uniprot.org/
-- MAVE datasets (when you add them): https://www.mavedb.org/
 
 Notes:
 - The scripts currently expect these files to be present in `data/`. If your filenames differ, either rename them or update the script arguments.
