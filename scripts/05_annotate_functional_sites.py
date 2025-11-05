@@ -75,9 +75,9 @@ def get_functional_sites(uniprot_id):
         ]:
             loc = f.get("location", {})
             start = loc.get("start", {}).get("value")
-            end = loc.get("end", {}).get("value", start)    # sets end to start if end is missing 
+            end = loc.get("end", {}).get("value", start)
             desc = f.get("description", "")
-            features.append({                               # stores each extracted feature in a dictionary 
+            features.append({
                 "UNIPROT_ACCESSION": uniprot_id,
                 "FEATURE_TYPE": ftype,
                 "FUNC_SITE_DESC": desc,
@@ -87,71 +87,102 @@ def get_functional_sites(uniprot_id):
     return features
 
 
-def merge_functional_sites(variants, functional_sites_df) -> pd.DataFrame:
-    """Merge variants with functional sites downloaded from Uniprot"""
-    print(f"Merging variants with Uniprot functional sites...\n ")
-    merged = variants.merge(functional_sites_df,on="UNIPROT_ACCESSION", how="left")
+def find_overlapping_sites(row, sites_dict):
+    """
+    For a single variant, find all overlapping functional sites.
+    Checking each variant against the dictionary of functional sites. 
+    Returns semicolon-separated strings or NA.
+    """
+    # pull the protein accession and amino acid position for a variant 
+    uniprot_acc = row["UNIPROT_ACCESSION"]
+    position = row["Protein_position"]
     
-    print(f"Final annotated dataset: {len(merged):,} rows.\n")
-    return merged
+    # if either uniprot_acc or position is missing, there can't be an overlap 
+    if pd.isna(uniprot_acc) or pd.isna(position):
+        return "NA", "NA", False
+    
+    # Get functional sites for this protein
+    sites = sites_dict.get(uniprot_acc, [])
+    
+    # No sites = no overlap 
+    if not sites:
+        return "NA", "NA", False
+    
+    # Collect all overlapping types and description for the variant 
+    overlapping_types = []
+    overlapping_descs = []
+    
+    # Iterates over each site and extracts its start/end position 
+    for site in sites:
+        start = site["FUNC_SITE_START"]
+        end = site["FUNC_SITE_END"]
+        
+        # Check if variants position overlaps 
+        if pd.notna(start) and pd.notna(end):
+            if start <= position <= end:
+                # If overlap, append the site 
+                if pd.notna(site["FEATURE_TYPE"]):
+                    overlapping_types.append(str(site["FEATURE_TYPE"]))
+                if pd.notna(site["FUNC_SITE_DESC"]):
+                    overlapping_descs.append(str(site["FUNC_SITE_DESC"]))
+    
+    # If overlaps: remove duplicates (set), sort alphabetical (sorted), collapse to one string (.join) 
+    if overlapping_types:
+        types_str = ";".join(sorted(set(overlapping_types)))
+        descs_str = ";".join(sorted(set(overlapping_descs))) if overlapping_descs else "NA"
+        return types_str, descs_str, True
+    # No overlaps:
+    else:
+        return "NA", "NA", False
 
 
-def in_functional_site(df: pd.DataFrame) -> pd.DataFrame:
+def annotate_with_functional_sites(variants, functional_sites_df) -> pd.DataFrame:
     """
-    Determine if each variant lies inside or outside a functional site.
-    Adds:
-        - IN_FUNC_SITE (True/False)
-        - FEATURE_TYPE (semicolon-joined site types)
-        - FUNC_SITE_DESC (semicolon-joined site descriptions)
+    Memory-efficient annotation: iterate through variants and check overlaps.
     """
-    print("Determining if variants are inside or outside functional site...\n")
-
-    # Ensure numeric positions
-    df["Protein_position"] = pd.to_numeric(df["Protein_position"], errors="coerce")
-    df["FUNC_SITE_START"] = pd.to_numeric(df["FUNC_SITE_START"], errors="coerce")
-    df["FUNC_SITE_END"] = pd.to_numeric(df["FUNC_SITE_END"], errors="coerce")
-
-    # Boolean overlap
-    df["IN_FUNC_SITE_tmp"] = (
-        (df["Protein_position"] >= df["FUNC_SITE_START"]) &
-        (df["Protein_position"] <= df["FUNC_SITE_END"])
-    )
-
-    # Summarize only overlapping variants (far fewer rows)
-    overlapping = df[df["IN_FUNC_SITE_tmp"]].copy()
-    summarized = (
-        overlapping.groupby(["Hugo_Symbol", "HGVSp_Short"], as_index=False)
-        .agg({
-            "FEATURE_TYPE": lambda x: ";".join(sorted(set(x.dropna()))),
-            "FUNC_SITE_DESC": lambda x: ";".join(sorted(set(x.dropna())))
+    print(f"Annotating {len(variants):,} variants with functional sites...\n")
+    
+    # Ensure numeric types
+    variants["Protein_position"] = pd.to_numeric(variants["Protein_position"], errors="coerce")
+    functional_sites_df["FUNC_SITE_START"] = pd.to_numeric(functional_sites_df["FUNC_SITE_START"], errors="coerce")
+    functional_sites_df["FUNC_SITE_END"] = pd.to_numeric(functional_sites_df["FUNC_SITE_END"], errors="coerce")
+    
+    # Create a dictionary: {UNIPROT_ACCESSION: [list of sites]}
+    # For memory efficiency 
+    print("Building functional sites dictionary...\n")
+    sites_dict = {}
+    for _, row in functional_sites_df.iterrows():
+        acc = row["UNIPROT_ACCESSION"]
+        if acc not in sites_dict:
+            sites_dict[acc] = []
+        sites_dict[acc].append({
+            "FEATURE_TYPE": row["FEATURE_TYPE"],
+            "FUNC_SITE_DESC": row["FUNC_SITE_DESC"],
+            "FUNC_SITE_START": row["FUNC_SITE_START"],
+            "FUNC_SITE_END": row["FUNC_SITE_END"]
         })
+    
+    # Find the number of accessions with functional sites
+    print(f"Built lookup dictionary for {len(sites_dict):,} proteins.\n")
+    
+    # Apply the 'find_overlapping_sites' to every variant 
+    print("Finding overlapping sites for each variant...\n")
+    results = variants.apply(
+        lambda row: find_overlapping_sites(row, sites_dict),
+        axis=1
     )
-
-    # Merge with the unique variant-level table (one row per variant)
-    base_variants = (
-        df[["Hugo_Symbol", "HGVSp_Short"] + [c for c in df.columns if c not in [
-            "Hugo_Symbol", "HGVSp_Short", "FEATURE_TYPE", "FUNC_SITE_DESC",
-            "FUNC_SITE_START", "FUNC_SITE_END", "IN_FUNC_SITE_tmp"
-        ]]]
-        .drop_duplicates(subset=["Hugo_Symbol", "HGVSp_Short"])
-    )
-
-    annotated = base_variants.merge(
-        summarized,
-        on=["Hugo_Symbol", "HGVSp_Short"],
-        how="left"
-    )
-
-    annotated["FEATURE_TYPE"] = annotated["FEATURE_TYPE"].fillna("NA")
-    annotated["FUNC_SITE_DESC"] = annotated["FUNC_SITE_DESC"].fillna("NA")
-    annotated["IN_FUNC_SITE"] = annotated["FEATURE_TYPE"].ne("NA")
-
-    print("Example summarized annotations:\n")
-    print(annotated[["Hugo_Symbol", "HGVSp_Short", "IN_FUNC_SITE",
-                     "FEATURE_TYPE", "FUNC_SITE_DESC"]].head(), "\n")
-
-    return annotated
-
+    
+    # Unpack results into separate columns
+    variants["FEATURE_TYPE"], variants["FUNC_SITE_DESC"], variants["IN_FUNC_SITE"] = zip(*results)
+    
+    # Print row count and preview
+    print(f"Final annotated dataset: {len(variants):,} rows.\n")
+    print("Example annotations:\n")
+    print(variants[["Hugo_Symbol", "HGVSp_Short", "Protein_position", 
+                     "IN_FUNC_SITE", "FEATURE_TYPE", "FUNC_SITE_DESC"]].head(10), "\n")
+    
+    # Return df 
+    return variants
 
 
 def main(): 
@@ -160,6 +191,8 @@ def main():
     # Load variants
     print("\nLoading variants file...\n")
     variants = pd.read_csv(args.input, sep="\t", low_memory=False)
+    n_input = len(variants)
+    print(f"Loaded {n_input:,} variants.\n")
 
     # Fetch or load functional sites
     accessions = variants["UNIPROT_ACCESSION"].dropna().unique()
@@ -173,20 +206,22 @@ def main():
         print("Fetching functional sites from UniProt API...\n")
         functional_sites = []
         for acc in tqdm(accessions, desc="Fetching functional sites"):
-            functional_sites.extend(get_functional_sites(acc))     # extend() appends each proteins features to one big list 
-            time.sleep(0.25)                                       # avoids overloading Uniprots server      
+            functional_sites.extend(get_functional_sites(acc))
+            time.sleep(0.25)
         functional_sites_df = pd.DataFrame(functional_sites)
         functional_sites_df.to_csv(args.funcsites, sep="\t", index=False)
+        print(f"Saved functional sites to: {args.funcsites}\n")
 
-    for col in ["FUNC_SITE_START", "FUNC_SITE_END"]:
-        functional_sites_df[col] = pd.to_numeric(functional_sites_df[col], errors="coerce").astype("Int64")
+    print(f"Loaded {len(functional_sites_df):,} functional site annotations.\n")
+    print(f"Example functional sites:")
+    print(f"\n{functional_sites_df.head()}\n")
 
-    print(f"Example output from 'functional_sites_df':")
-    print(f"\n{functional_sites_df.head()}")
+    # Annotate variants
+    annotated = annotate_with_functional_sites(variants.copy(), functional_sites_df)
 
-    # Merge + annotate 
-    merged_variants_df = merge_functional_sites(variants, functional_sites_df) 
-    annotated = in_functional_site(merged_variants_df)
+    # Verify no variants were lost
+    assert len(annotated) == n_input, f"ERROR: Lost variants! Input: {n_input}, Output: {len(annotated)}"
+    print(f"All {n_input:,} variants preserved.\n")
 
     # Summary 
     n_total = len(annotated)
@@ -195,9 +230,8 @@ def main():
 
     # Save final annotated file 
     annotated.to_csv(args.output, sep="\t", index=False) 
-    print(f"\nAnnotated variants file saved to: {args.output}\n")
+    print(f"Annotated variants file saved to: {args.output}\n")
 
 
 if __name__ == "__main__":
     main()
-
