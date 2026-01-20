@@ -1,4 +1,7 @@
 """ 
+====================================================================
+Functional Sites Annotation Script
+====================================================================
 
 Script: 05_annotate_functional_sites.py 
 Author: Ane Kleiven 
@@ -138,7 +141,8 @@ def find_overlapping_sites(row, sites_dict):
 
 def annotate_with_functional_sites(variants, functional_sites_df) -> pd.DataFrame:
     """
-    Memory-efficient annotation: iterate through variants and check overlaps.
+    Annotate variants with functional sites
+    Iterate through variants and check overlaps.
     """
     print(f"Annotating {len(variants):,} variants with functional sites...\n")
     

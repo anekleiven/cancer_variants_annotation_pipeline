@@ -1,9 +1,12 @@
 """
+====================================================================
+Cancer Hotspots Annotation 
+====================================================================
+
 Script: 02_annotate_hotspots.py
 Author: Ane Kleiven
 
-Script to annotate cancer hotspots to 
-cancer variants
+Script to annotate cancer hotspots to cancer variants
 
 Input: 
 	OncoKB annotated cancer variants (.MAF file) 
@@ -18,6 +21,7 @@ import argparse
 from pathlib import Path
 
 # define function for user input file paths 
+
 def get_args():
 	parser = argparse.ArgumentParser(description="Annotate variants with cancer hotspots")
 	parser.add_argument(

@@ -1,4 +1,8 @@
 """
+====================================================================
+Protein Domain Annotation Script
+====================================================================
+
 Script: 04_annotate_protein_domains.py
 Author: Ane Kleiven
 
