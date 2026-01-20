@@ -8,7 +8,8 @@ Author: Ane Kleiven
 
 Major outputs: 
   1. Loading variant data files 
-  2. Preprocessing of germline variant file (filter variants, extract AA position)
+  2. Preprocessing of germline variant file (filter variants, extract AA position) 
+     Can be found here: (https://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/)
   3. Create dictionary of germline variants per gene, with AA positions as values
   4. Calculate the shortest germline proximity for each somatic variant 
   5. Apply germline proximity to somatic variant table 
