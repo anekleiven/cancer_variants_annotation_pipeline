@@ -1,6 +1,4 @@
-#!/usr/bin/env Rscript
 # -----------------------------------------------------------
-
 #====================================================================
 # Uniprot mapping script
 #====================================================================
@@ -12,13 +10,13 @@
 #   using the geneOncoX reference (Sigve Nakken)
 #
 # Usage:
-#   Rscript add_uniprot_mapping.R <input_file> <output_file> [cache_dir]
+#   Rscript 03_add_uniprot_mapping.R <input_file> <output_file> [cache_dir]
 #
 # Example:
-#   Rscript add_uniprot_mapping.R \
-#     annotation_pipeline/output/annotated_with_hotspots.maf \
-#     annotation_pipeline/data/variants_with_uniprot.tsv \
-#     annotation_pipeline/data_cache
+#   Rscript 03_add_uniprot_mapping.R \
+#     cancer_variants_annotation_pipeline/output/annotated_with_hotspots.maf \
+#     cancer_variants_annotation_pipeline/data/variants_with_uniprot.tsv \
+#     cancer_variants_annotation_pipeline/data_cache
 # -----------------------------------------------------------
 
 # -----------------------------
@@ -35,14 +33,14 @@ suppressPackageStartupMessages({
 args <- commandArgs(trailingOnly = TRUE)
 
 if (length(args) < 2) {
-  message("\nUsage: Rscript add_uniprot_mapping.R <input_file> <output_file> [cache_dir]")
-  message("Example: Rscript add_uniprot_mapping.R data/variants.maf data/variants_with_uniprot.tsv annotation_pipeline/data_cache\n")
+  message("\nUsage: Rscript 03_add_uniprot_mapping.R <input_file> <output_file> [cache_dir]")
+  message("Example: Rscript 03_add_uniprot_mapping.R output/annotated_with_hotspots.maf data/variants_with_uniprot.tsv /data_cache\n")
   stop("Missing required arguments. Please provide at least input and output file paths.")
 }
 
 input_file  <- args[1]
 output_file <- args[2]
-cache_dir   <- ifelse(length(args) >= 3, args[3], "annotation_pipeline/data_cache")
+cache_dir   <- ifelse(length(args) >= 3, args[3], "cancer_variants_annotation_pipeline/data_cache")
 
 # -----------------------------
 # Display settings

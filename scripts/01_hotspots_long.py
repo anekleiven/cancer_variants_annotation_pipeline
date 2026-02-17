@@ -30,7 +30,8 @@ def get_args():
     parser.add_argument(
         "--input",
         type=Path,
-        required=True,
+        default="data/hotspots.txt",
+        required=False, 
         help="Path to the input hotspot file (e.g. data/hotspots.txt)"
     )
 

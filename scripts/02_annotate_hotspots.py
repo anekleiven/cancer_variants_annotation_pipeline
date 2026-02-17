@@ -23,27 +23,32 @@ from pathlib import Path
 # define function for user input file paths 
 
 def get_args():
-	parser = argparse.ArgumentParser(description="Annotate variants with cancer hotspots")
+	parser = argparse.ArgumentParser(
+		description="Annotate variants with cancer hotspots"
+		)
+
 	parser.add_argument(
 		"--input",
 		type=Path,
-		required=True, 
+		default="/home/anekl/git/master/genie_oncokb_processing_scripts/annotated_output.maf",
+		required=False, 
 		help="Path to the input file (e.g.annotated_output.maf)"
   )
 	
 	parser.add_argument(
     "--hotspots",
       type=Path,
-      required=True,
-      help="Path to the expanded cancer hotspots file"
+			default="/home/anekl/git/master/cancer_variants_annotation_pipeline/data/hotspots_long.tsv",
+      required=False, 
+      help="Path to the expanded cancer hotspots file."
 	)
 
 	parser.add_argument(
 		"--output",
 		type=Path,
 		required=False,
-		default=Path("annotation_pipeline/output/annotated_with_hotspots.maf"),
-		help="Path to save the annotated output file (default: annotation_pipeline/output/annotated_with_hotspots.maf)"
+		default=Path("/home/anekl/git/master/cancer_variants_annotation_pipeline/output/annotated_with_hotspots.maf"),
+		help="Path to save the annotated output file."
 	)
 	
 	return parser.parse_args() 

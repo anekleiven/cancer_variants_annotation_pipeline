@@ -31,24 +31,25 @@ def get_args():
     parser.add_argument(
         "--input",
         type=Path,
-        required=True,
-        help="Path to the input variant file (e.g. annotation_pipeline/output/variants_with_pfam_domains.tsv)"
+        required=False,
+        default="output/variants_with_pfam_domains.tsv",
+        help="Path to the input variant file (e.g. output/variants_with_pfam_domains.tsv)"
     )
 
     parser.add_argument(
         "--funcsites",
         type=Path,
         required=False,
-        default="annotation_pipeline/data/human_functional_sites.tsv",
-        help="Path to the functional sites file (e.g. annotation_pipeline/data/human_functional_sites.tsv)"
+        default="data/human_functional_sites.tsv",
+        help="Path to the functional sites file (e.g. data/human_functional_sites.tsv)"
     )
 
     parser.add_argument(
         "--output",
         type=Path, 
         required=False,
-        default="annotation_pipeline/output/variants_with_func_sites.tsv",
-        help="Path to the output variant file (e.g. annotation_pipeline/output/variants_with_func_sites.tsv)"
+        default="output/variants_with_func_sites.tsv",
+        help="Path to the output variant file (e.g. output/variants_with_func_sites.tsv)"
     )
 
     return parser.parse_args()

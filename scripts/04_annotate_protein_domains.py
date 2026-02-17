@@ -12,13 +12,13 @@ Purpose:
 
 Input:
     - Variants annotated with UniProt accession numbers 
-      (e.g., annotation_pipeline/data/variants_with_uniprot.tsv)
+      (e.g., data/variants_with_uniprot.tsv)
     - Pfam domain locations file (Pfam-A.regions.tsv.gz)
     - Pfam clan metadata file (Pfam-A.clans.tsv)
 
 Output:
     - TSV file of cancer variants annotated with Pfam domains and clans
-      (e.g., annotation_pipeline/output/variants_with_pfam_domains.tsv)
+      (e.g., output/variants_with_pfam_domains.tsv)
 """
 
 import pandas as pd
@@ -38,29 +38,32 @@ def get_args():
     parser.add_argument(
         "--input",
         type=Path,
-        required=True,
-        help="Path to the input file (e.g. annotation_pipeline/data/variants_with_uniprot.tsv)"
+        required=False,
+        default="data/variants_with_uniprot.tsv",
+        help="Path to the input file (e.g. data/variants_with_uniprot.tsv)"
     )
     
     parser.add_argument(
         "--pfam",
         type=Path,
-        required=True,
-        help="Path to the Pfam domain locations file (e.g. annotation_pipeline/data/Pfam-A.regions.tsv.gz)"
+        required=False,
+        default="data/Pfam-A.regions.tsv.gz",
+        help="Path to the Pfam domain locations file (e.g. data/Pfam-A.regions.tsv.gz)"
     )
     
     parser.add_argument(
         "--pclan",
         type=Path,
-        required=True,
-        help="Path to the Pfam clan file (e.g. annotation_pipeline/data/Pfam-A.clans.tsv)"
+        required=False,
+        default="data/Pfam-A.clans.tsv",
+        help="Path to the Pfam clan file (e.g. data/Pfam-A.clans.tsv)"
     )
     
     parser.add_argument(
         "--output",
         type=Path, 
         required=False,
-        default="annotation_pipeline/output/variants_with_pfam_domains.tsv",
+        default="output/variants_with_pfam_domains.tsv",
         help="Path to save the annotated output TSV file"
     )
     
@@ -97,18 +100,28 @@ def load_variants_with_uniprot(input_file: Path) -> pd.DataFrame:
 # 2. Load Pfam domain locations (Pfam-A.regions.tsv.gz)
 # ============================================================
 
-def load_pfam_regions(pfam_regions_file: Path, chunksize: int = 500000) -> pd.DataFrame:
-    """Load Pfam-A regions file efficiently and clean duplicates."""
-    print(f"Loading Pfam-A domain regions: {pfam_regions_file}")
+def load_pfam_regions(pfam_regions_file: Path, relevant_uniprot: list, chunksize: int = 500000) -> pd.DataFrame:
+    """Load Pfam-A regions file and filter for relevant proteins during chunking."""
+    print(f"Loading and filtering Pfam-A domain regions: {pfam_regions_file}")
 
     use_cols = ["pfamseq_acc", "pfamA_acc", "seq_start", "seq_end"]
     chunks = []
 
+    # Reading in chunks to prevent memory to explode 
     for chunk in pd.read_csv(pfam_regions_file, sep="\t", 
                              usecols=use_cols, 
                              chunksize=chunksize):
-        chunk = chunk.drop_duplicates(subset=use_cols)
-        chunks.append(chunk)
+        
+        # Drop rows with other pfam accession numbers (not in our data)
+        chunk = chunk[chunk["pfamseq_acc"].isin(relevant_uniprot)]
+        
+        if not chunk.empty:
+            chunk = chunk.drop_duplicates(subset=use_cols)
+            chunks.append(chunk)
+
+    if not chunks:
+        print("No matching UniProt accessions found in Pfam file.")
+        return pd.DataFrame(columns=["UNIPROT_ACCESSION", "PFAM_ACCESSION", "DOMAIN_START", "DOMAIN_END"])
 
     df = pd.concat(chunks).drop_duplicates(subset=use_cols)
 
@@ -117,15 +130,14 @@ def load_pfam_regions(pfam_regions_file: Path, chunksize: int = 500000) -> pd.Da
         "pfamA_acc": "PFAM_ACCESSION",
         "seq_start": "DOMAIN_START",
         "seq_end": "DOMAIN_END"
-        }
-        )
+        })
 
+    # Convert to numeric data type 
     df["DOMAIN_START"] = pd.to_numeric(df["DOMAIN_START"], errors="coerce").astype("Int64")
     df["DOMAIN_END"] = pd.to_numeric(df["DOMAIN_END"], errors="coerce").astype("Int64")
 
-    print(f"Loaded {len(df):,} unique Pfam domain mappings.\n")
+    print(f"Filtered Pfam down to {len(df):,} relevant domain mappings.\n")
     return df
-
 
 # ============================================================
 # 3. Load Pfam clans 
@@ -154,69 +166,46 @@ def merge_variants_with_pfam(
         pfam_regions: pd.DataFrame, 
         pfam_clans: pd.DataFrame
 ) -> pd.DataFrame:
-    """
-    Merge cancer variants with Pfam domain and clan metadata,
-    and determine whether each variant lies within a protein domain.
-
-    Output: one row per variant, with overlapping domain(s) or 'NA'.
-    """
     
     print(f"Merging variants with Pfam domain regions...\n")
     
-    print("Step 1: Merge variants with Pfam regions")
-    merged = variants.merge(pfam_regions, on="UNIPROT_ACCESSION", how="left")
-    print(f"After merge: {len(merged):,} rows.\n")
-
-    print("Step 2: Add Pfam domain names and clans")
-    merged = merged.merge(pfam_clans, on="PFAM_ACCESSION", how="left")
-    print(f"After adding pfam clan information: {len(merged):,} rows.\n")
-
-    print("Step 3: Determine whether variant lie within domains")
-
-    # Check data types (numeric columns) 
-    for col in ["Protein_position", "DOMAIN_START", "DOMAIN_END"]:
-        merged[col] = pd.to_numeric(merged[col], errors='coerce')
+    # 1. Get unique accessions present in your variants to shrink the Pfam table
+    # This is the most important step for saving RAM
+    relevant_uniprot = variants["UNIPROT_ACCESSION"].unique()
+    pfam_regions = pfam_regions[pfam_regions["UNIPROT_ACCESSION"].isin(relevant_uniprot)].copy()
     
-    # Check if variant position overlaps with protein domain 
-    merged["IN_DOMAIN"] = (
+    print(f"Filtered Pfam regions down to {len(pfam_regions):,} relevant records.")
+
+    # 2. Perform the merge
+    merged = variants.merge(pfam_regions, on="UNIPROT_ACCESSION", how="inner")
+    
+    # 3. Filter for overlap 
+    # Using .query() for memory efficiency 
+    overlapping = merged[
         (merged["Protein_position"] >= merged['DOMAIN_START']) & 
         (merged["Protein_position"] <= merged['DOMAIN_END'])
-    )
-
-    print("Example overlap check:\n",
-          merged[["Hugo_Symbol", "HGVSp_Short", "Protein_position",
-                  "DOMAIN_NAME", "DOMAIN_START", "DOMAIN_END", 
-                  "IN_DOMAIN"]]
-          .head(5), "\n")
+    ].copy()
     
-    print("Step 4: Summarize per variant")
-    # Only keep overlapping domain rows 
-    overlapping = merged[merged["IN_DOMAIN"]].copy() 
+    # Clean up the massive 'merged' object from RAM 
+    del merged 
 
-    # Collapse multiple overlapping domains if they exist 
-    # Groups all rows that belong to the same variant (gene + protein change) 
-    # Applies an aggregation function that removes duplicated domain names, sorts them alphabetical and joins them to one string
+    print(f"Found {len(overlapping):,} overlapping domain instances.")
+
+    # 4. Add Clan info to the overlapping rows
+    overlapping = overlapping.merge(pfam_clans, on="PFAM_ACCESSION", how="left")
+
+    # 5. Summarize and collapse multiple domains per variant 
     summarized = (
         overlapping.groupby(["Hugo_Symbol", "HGVSp_Short"], as_index=False)
         .agg({
             "DOMAIN_NAME": lambda x: ";".join(sorted(set(x.dropna()))),
             "DESCRIPTION": lambda x: ";".join(sorted(set(x.dropna())))
-            })
-            )
+        })
+    )
     
-    # Keep original variant order, fill missing domains with NA 
-    out = (
-        variants.merge(
-            summarized, 
-            on=["Hugo_Symbol", "HGVSp_Short"], 
-            how="left"))
-    
+    # 6. Join back to the original variant list to restore 'NA' rows
+    out = variants.merge(summarized, on=["Hugo_Symbol", "HGVSp_Short"], how="left")
     out["DOMAIN_NAME"] = out["DOMAIN_NAME"].fillna("NA")
-
-
-    print("Step 5: Final annotated dataset")
-    print(out.head(), "\n")
-    print(f"Output: {len(out):,} variants with protein domain annotations.\n")
 
     return out
 
@@ -227,15 +216,22 @@ def merge_variants_with_pfam(
 def main():
     args = get_args() 
 
+    # 1. Load variants first
     variants = load_variants_with_uniprot(args.input)
-    pfam_domains = load_pfam_regions(args.pfam)
+    
+    # 2. Get list of UniProt IDs to use as a filter
+    relevant_uniprot = variants["UNIPROT_ACCESSION"].unique().tolist()
+
+    # 3. Load Pfam using filter
+    pfam_domains = load_pfam_regions(args.pfam, relevant_uniprot)
+    
     pfam_clans = load_pfam_clans(args.pclan)
 
     annotated = merge_variants_with_pfam(variants, pfam_domains, pfam_clans)
 
     annotated.to_csv(args.output, sep="\t", index=False)
-    print(f"\nSaved annotated variant file to: {args.output}\n")
 
+    print(f"\nSaved annotated variant file to: {args.output}\n")
 
 # ============================================================
 # 6. Entry point

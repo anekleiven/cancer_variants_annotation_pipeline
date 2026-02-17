@@ -184,5 +184,8 @@ def main():
   print(f"Annotated output file saved as: {args.output}\n")
 
 
+  print("Script ended!🎉\n")
+
+
 if __name__ == "__main__":
 	main() 
