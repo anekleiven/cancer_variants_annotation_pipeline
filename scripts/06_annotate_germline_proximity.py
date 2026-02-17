@@ -9,7 +9,7 @@ Author: Ane Kleiven
 Major outputs: 
   1. Loading variant data files 
   2. Preprocessing of germline variant file (filter variants, extract AA position) 
-     Can be found here: (https://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/)
+     Germline variant file be found here: (https://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/)
   3. Create dictionary of germline variants per gene, with AA positions as values
   4. Calculate the shortest germline proximity for each somatic variant 
   5. Apply germline proximity to somatic variant table 
@@ -34,22 +34,22 @@ def getargs():
   parser.add_argument(
     "--input", 
     type=Path, 
-    default="annotation_pipeline/output/variants_with_func_sites.tsv",
-    help="Path to the variant input file (e.g. annotation_pipeline/output/variants_with_func_sites.tsv)"
+    default="output/variants_with_func_sites.tsv",
+    help="Path to the variant input file (e.g. output/variants_with_func_sites.tsv)"
   )
 
   parser.add_argument(
     "--germline_variant_file",
     type=Path,
-    default="annotation_pipeline/data/variant_summary.txt.gz",
-    help="Path to the germline variant file (e.g. annotation_pipeline/data/variant_summary.txt)"
+    default="data/variant_summary.txt.gz",
+    help="Path to the germline variant file (e.g. data/variant_summary.txt)"
   )
 
   parser.add_argument(
     "--output",
     type=Path,
-    default="annotation_pipeline/output/variants_with_germline_proximity.tsv",
-    help="Path to the annotated output variant file (e.g. annotation_pipeline/output/variants_with_germline_proximity.tsv)"
+    default="output/variants_with_germline_proximity.tsv",
+    help="Path to the annotated output variant file (e.g. output/variants_with_germline_proximity.tsv)"
   )
 
   return parser.parse_args() 
@@ -64,28 +64,57 @@ def main():
   # load files needed for annotation 
   print("Loading files needed for annotation of germline proximity..\n")
 
+  print("Reading somatic variant file..")
   somatic_variants = pd.read_csv(args.input, sep="\t", low_memory=False) 
-  germline_variants=pd.read_csv(args.germline_variant_file, sep="\t", low_memory=False)
+  print(f"Loaded {len(somatic_variants):,} somatic variants from {args.input.name}\n")
 
-  print(f"Loaded {len(somatic_variants):,} somatic variants from {args.input.name}") 
+  print("Reading germline variant file (filtered)")
+  # choose germline columns to read 
+  germline_cols = [
+    "Assembly",
+    "Origin",
+    "Name",
+    "GeneID",
+    "GeneSymbol", 
+    "ClinicalSignificance"
+  ]
+
+  # only include gene id's present in the somatic variant file
+  somatic_gene_ids = set(somatic_variants["Entrez_Gene_Id"].dropna().unique())
+
+  # read file in chunks to save memory 
+  chunks =  []
+
+  for chunk in pd.read_csv(
+    args.germline_variant_file, 
+    sep="\t", 
+    usecols=germline_cols, 
+    chunksize=100000,
+    low_memory=False
+  ):
+    chunks.append(chunk[chunk["GeneID"].isin(somatic_gene_ids)])
+  
+  germline_variants = pd.concat(chunks, ignore_index=True)
+
   print(f"Loaded {len(germline_variants):,} variants from {args.germline_variant_file.name}\n")
 
   # Extract variants that are:
-  #   From assembly GRCh38
+  #   From assembly GRCh37
   #   Pathogenic and Likely Pathogenic variants 
   #   Origin == germline
 
-  print("Filtering variants to only include germline Pathogenic/LikelyPathogenic variants from assembly GRCh38..\n")
+  print("Filtering variants to only include germline Pathogenic/LikelyPathogenic variants from assembly GRCh37..\n")
 
   germline_variants_filtered = germline_variants[
-      (germline_variants["Assembly"] == "GRCh38") &
+      (germline_variants["Assembly"] == "GRCh37") &
       (germline_variants["Origin"] == "germline") &
       (germline_variants["ClinicalSignificance"].isin(["Pathogenic", "LikelyPathogenic"]))
   ]
 
   print(f"Number of germline variants after filtering: {len(germline_variants_filtered):,}\n") 
 
-  # Extract amino acid position (p.Gly56Arg) == position 56 
+
+  # Extract amino acid position ((p.Gly56Arg) == position 56)
   # Exluding frameshift and complex variants
 
   print("Extracting HGVSp from 'Name' column..\n")
@@ -95,7 +124,7 @@ def main():
       .str.split(" ", n=1)
       .str[1]
       .str.strip("()")
-  )
+  ).copy()
 
   print("Extracting amino acid position from HGVSp using regex..\n")
 
@@ -110,24 +139,12 @@ def main():
 
 
   # Clean germline variant data before mapping
+  print("Cleaning germline variant data before mapping...")
 
-  print("Keep only selected columns for further analysis..\n")
+  print("Removing rows with missing data..\n")
+  germline_variants_cleaned = germline_variants_filtered.dropna()
 
-  columns_mapping = ["GeneSymbol",
-                     "GeneID",
-                     "HGVSp",
-                     "AA_Position_Germline",
-                     "ClinicalSignificance"
-                     ]
-  
-  germline_variants_cleaned = germline_variants_filtered[columns_mapping]
-
-  print("Remove rows with missing data..\n")
-
-  germline_variants_cleaned = germline_variants_cleaned.dropna()
-
-  print("Rename GeneID column to match somatic variant file..\n")
-
+  print("Renaming columns...\n")
   germline_variants_cleaned = germline_variants_cleaned.rename(
       columns={"GeneID": "Entrez_Gene_Id",
                "HGVSp":"HGVSp_germline"}
@@ -151,7 +168,6 @@ def main():
 
   
   # define a function to calculate germline proximity per somatic variant (row by row)
-
   def compute_germline_proximity(row):
       gene_id = row["Entrez_Gene_Id"]
       somatic_pos = row["Protein_position"]
@@ -163,19 +179,15 @@ def main():
       return min(abs(somatic_pos - gp) for gp in germline_positions)
 
 
-  # call the function 
-
+  # call germline proximity function
   print("Computing germline proximity and applying distances to somatic variants..\n")
-
   somatic_variants["Germline_Proximity"] = somatic_variants.apply(
     compute_germline_proximity,
     axis=1
 )
 
-  # look at the data after merging: 
-  selected_columns = ["Hugo_Symbol", "Entrez_Gene_Id", "HGVSp", "Protein_position", "Germline_Proximity"]
-
   print("Somatic variant data after merging:")
+  selected_columns = ["Hugo_Symbol", "Entrez_Gene_Id", "HGVSp", "Protein_position", "Germline_Proximity"]
   print(somatic_variants[selected_columns].head(), "\n")
 
 
