@@ -1,12 +1,12 @@
-# Cancer Variants Annotation Pipeline 
+# Cancer Variants Annotation Pipeline 👩🏽‍🔬
 
-Annotation pipeline that annotates somatic cancer variants with classification evidence such as cancer hotspots, protein domains, functional sites, pathogenic germline variant distances and MAVEs. 
+Annotation pipeline that annotates somatic cancer variants with classification evidence such as cancer hotspots, protein domains, functional sites, pathogenic germline variant distances and MAVEs 🧬
 
-## Requirements
+## Requirements 💻
 - Python 3.10+
 - R 4.2+
 
-## Setup Instructions 
+## Setup Instructions 🔧
 
 1. **Create Virtual Environment:**
 `python -m venv .venv`
@@ -18,7 +18,8 @@ Annotation pipeline that annotates somatic cancer variants with classification e
 3. **Install R requirements:**
 `Rscript install_deps.R`
 
-## Pipeline Order
+## Pipeline Order 🤓🤓
+
 `01_hotspots_long.py` - converts hotspot data to long format 
 
 `02_annotate_hotspots.py` - annotates cancer variants with cancer hotspots 
