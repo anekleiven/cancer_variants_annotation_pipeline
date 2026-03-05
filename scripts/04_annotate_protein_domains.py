@@ -207,6 +207,9 @@ def merge_variants_with_pfam(
     out = variants.merge(summarized, on=["Hugo_Symbol", "HGVSp_Short"], how="left")
     out["DOMAIN_NAME"] = out["DOMAIN_NAME"].fillna("NA")
 
+    # 7. Add IN_DOMAIN binary column 
+    out["IN_DOMAIN"] = (out["DOMAIN_NAME"] != "NA") & (out["DOMAIN_NAME"] != "")
+
     return out
 
 # ============================================================

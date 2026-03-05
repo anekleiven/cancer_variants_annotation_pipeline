@@ -33,8 +33,8 @@ suppressPackageStartupMessages({
 args <- commandArgs(trailingOnly = TRUE)
 
 if (length(args) < 2) {
-  message("\nUsage: Rscript 03_add_uniprot_mapping.R <input_file> <output_file> [cache_dir]")
-  message("Example: Rscript 03_add_uniprot_mapping.R output/annotated_with_hotspots.maf data/variants_with_uniprot.tsv /data_cache\n")
+  message("\nUsage: Rscript scripts/03_add_uniprot_mapping.R <input_file> <output_file> [cache_dir]")
+  message("Example: Rscript scripts/03_add_uniprot_mapping.R output/annotated_with_hotspots.maf data/variants_with_uniprot.tsv cancer_variants_annotation_pipeline/data_cache\n")
   stop("Missing required arguments. Please provide at least input and output file paths.")
 }
 

@@ -30,7 +30,7 @@ def get_args():
 	parser.add_argument(
 		"--input",
 		type=Path,
-		default="/home/anekl/git/master/genie_oncokb_processing_scripts/annotated_output.maf",
+		default="/home/anekl/git/master/genie_oncokb_processing_scripts/data/annotated_output.maf",
 		required=False, 
 		help="Path to the input file (e.g.annotated_output.maf)"
   )
@@ -74,6 +74,12 @@ def main():
 		left_on=['Hugo_Symbol', 'HGVSp_Short'],
 		right_on=['Hugo_Symbol', 'HGVSp_Short'],
 	)
+
+	merged["In_Hotspot"] = (
+    merged["Hotspot_Type"].notna() & 
+    (merged["Hotspot_Type"] != "NA") & 
+    (merged["Hotspot_Type"] != "")
+)
 
 	print(f"Merged dataset has {len(merged):,} rows\n") 
 	
