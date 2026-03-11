@@ -3,7 +3,7 @@
 Annotate somatic variant data with MAVEs
 ====================================================================
 
-Script: 08_annotate_maves.py 
+Script: 07_annotate_maves.py 
 Author: Ane Kleiven 
 
 Major outputs: 
@@ -60,12 +60,14 @@ def strip_prefix(hgvsp):
 # function to extract MAVE information and convert to df 
 def vcf_to_dataframe(vcf_path): 
     """
-    Analyze VEP VCF file and return a df with one row per CSQ entry, containing: 
-    Hugo_Symbol, HGVSp, MaveDB_score, MaveDB_urn, MaveDB_nt, MAVEdb_pro. 
-    Only rows with MAVEdb_score are kept. 
+    Analyze VEP VCF file and return a df with one row per CSQ entry per experiment,
+    containing: Hugo_Symbol, HGVSp, MaveDB_score, MaveDB_urn, MaveDB_nt, MaveDB_pro.
+    Scores are normalized (z-score) per MaveDB_urn (experiment).
+    Only rows with a MaveDB_score are kept.
     """
 
     rows = [] 
+    csq_fields = None
 
     with open(vcf_path, "r") as file: 
         for line in file:
@@ -110,37 +112,56 @@ def vcf_to_dataframe(vcf_path):
                 f = dict(zip(csq_fields, entry.split("|"))) 
 
                 mave_score_raw = f.get("MaveDB_score", "").strip()
-                mave_score = mave_score_raw.split("&")[0] if mave_score_raw else None
+                mave_scores = mave_score_raw.split("&") if mave_score_raw else []
 
-                if not mave_score or mave_score == "NA": 
-                    continue # skip entries without mave score 
-                
+                # skip if all scores are missing/NA
+                if not mave_scores or all(s.strip() in ("NA", "") for s in mave_scores):
+                    continue
+
                 symbol = f.get("SYMBOL", "").strip() 
                 if not symbol:
                     continue 
 
-
-                hgvsp  = strip_prefix(f.get("HGVSp", "").strip())
+                hgvsp = strip_prefix(f.get("HGVSp", "").strip())
                 mave_pro = f.get("MaveDB_pro", "").strip() 
 
-                #check if hgvsp is missing/NA and we have mave protein data 
+                # check if hgvsp is missing/NA and we have mave protein data 
                 if (not hgvsp or hgvsp == "NA") and mave_pro:
                     hgvsp = mave_pro.split("&")[0].strip() 
                 
                 if not hgvsp or hgvsp == "NA":
                     continue 
 
-                rows.append({
-                    "Hugo_Symbol":  symbol,
-                    "HGVSp":        hgvsp,
-                    "MaveDB_score": mave_score,
-                    "MaveDB_urn":   f.get("MaveDB_urn",  "").strip() or None,
-                    "MaveDB_nt":    f.get("MaveDB_nt",   "").strip() or None,
-                    "MaveDB_pro":   f.get("MaveDB_pro",  "").strip() or None,
-                })
+                mave_urns = f.get("MaveDB_urn", "").strip().split("&")
+                mave_nts  = f.get("MaveDB_nt",  "").strip().split("&")
+                mave_pros = f.get("MaveDB_pro",  "").strip().split("&")
 
-    mave_df = pd.DataFrame(rows).drop_duplicates(subset=["Hugo_Symbol", "HGVSp"])
-    print(f"VCF: {len(mave_df):,} unique entries with a MAVE score")
+                # one row per experiment (score/urn pair)
+                for i, score in enumerate(mave_scores):
+                    score = score.strip()
+                    if not score or score == "NA":
+                        continue
+                    rows.append({
+                        "Hugo_Symbol":  symbol,
+                        "HGVSp":        hgvsp,
+                        "MaveDB_score": score,
+                        "MaveDB_urn":   mave_urns[i].strip() if i < len(mave_urns) else None,
+                        "MaveDB_nt":    mave_nts[i].strip()  if i < len(mave_nts)  else None,
+                        "MaveDB_pro":   mave_pros[i].strip() if i < len(mave_pros) else None,
+                    })
+
+    mave_df = pd.DataFrame(rows)
+    mave_df["MaveDB_score"] = pd.to_numeric(mave_df["MaveDB_score"], errors="coerce")
+    mave_df = mave_df.dropna(subset=["MaveDB_score"])
+    mave_df = mave_df.drop_duplicates(subset=["Hugo_Symbol", "HGVSp", "MaveDB_urn"])
+
+    # parse urn structure into components; experiment_set, experiment, score_set 
+    mave_df["experiment_set"] = mave_df["MaveDB_urn"].str.extract(r"urn:mavedb:(\d+)")
+    mave_df["experiment"]     = mave_df["MaveDB_urn"].str.extract(r"urn:mavedb:\d+-([\w]+)-")
+    mave_df["score_set"]      = mave_df["MaveDB_urn"].str.extract(r"urn:mavedb:\d+-\w+-(\d+)")
+
+    print(f"VCF: {len(mave_df):,} unique entries with a MAVE score (one row per experiment)")
+
     return mave_df
 
 
@@ -160,13 +181,26 @@ def main(somatic_variants, vcf_path, out_path):
         somatic_variants["HGVSp"] = somatic_variants["HGVSp"].str.strip() 
 
     print("Joining on Hugo_Symbol + HGVSp...")
+    # a variant with scores in multiple experiments gets multiple rows
     merged_variants = somatic_variants.merge(mave_df, on=["Hugo_Symbol", "HGVSp"], how="left")
 
     n_scored = merged_variants["MaveDB_score"].notna().sum()
     print(f"Variants with MaveDB score: {n_scored:,} / {len(merged_variants):,} ({100*n_scored/len(merged_variants):.1f}%)")
 
-    merged_variants.to_csv(out_path, sep="\t", index=False)
-    print(f"Written: {out_path}")
+    # Save one file for none-Mave-analyses 
+    # One row per variant
+    # Highest MAVE score is kept if MaveScore
+    variants_unique = (merged_variants
+                    .sort_values("MaveDB_score", ascending=False, na_position="last")
+                    .drop_duplicates(subset=["Hugo_Symbol", "HGVSp"]))
+
+    variants_unique.to_csv(out_path, sep="\t", index=False)
+    print(f"Written (deduplicated): {out_path}")
+
+    # Save expanded file (one row per variant-experiment pair) - for MAVE analyses only
+    out_path_expanded = out_path.with_name(out_path.stem + "_expanded" + out_path.suffix)
+    merged_variants.to_csv(out_path_expanded, sep="\t", index= False) 
+    print(f"Written (expanded): {out_path_expanded}")
 
 
 if __name__ == "__main__":

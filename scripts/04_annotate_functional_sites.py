@@ -3,7 +3,7 @@
 Functional Sites Annotation Script
 ====================================================================
 
-Script: 05_annotate_functional_sites.py 
+Script: 04_annotate_functional_sites.py 
 Author: Ane Kleiven 
 
 Uniprot API: 

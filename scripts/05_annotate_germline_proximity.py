@@ -3,7 +3,7 @@
 Germline Proximity Annotation Script
 ====================================================================
 
-Script: 06_annotate_germline_proximity.py 
+Script: 05_annotate_germline_proximity.py 
 Author: Ane Kleiven 
 
 Major outputs: 

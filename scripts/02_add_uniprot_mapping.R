@@ -3,17 +3,17 @@
 # Uniprot mapping script
 #====================================================================
 
-# Script: 03_add_uniprot_mapping.R
+# Script: 02_add_uniprot_mapping.R
 # Author: Ane Kleiven
 # Description:
 #   Annotates a variant dataset with UniProt accession numbers
 #   using the geneOncoX reference (Sigve Nakken)
 #
 # Usage:
-#   Rscript 03_add_uniprot_mapping.R <input_file> <output_file> [cache_dir]
+#   Rscript 02_add_uniprot_mapping.R <input_file> <output_file> [cache_dir]
 #
 # Example:
-#   Rscript 03_add_uniprot_mapping.R \
+#   Rscript 02_add_uniprot_mapping.R \
 #     cancer_variants_annotation_pipeline/output/annotated_with_hotspots.maf \
 #     cancer_variants_annotation_pipeline/data/variants_with_uniprot.tsv \
 #     cancer_variants_annotation_pipeline/data_cache
@@ -33,8 +33,8 @@ suppressPackageStartupMessages({
 args <- commandArgs(trailingOnly = TRUE)
 
 if (length(args) < 2) {
-  message("\nUsage: Rscript scripts/03_add_uniprot_mapping.R <input_file> <output_file> [cache_dir]")
-  message("Example: Rscript scripts/03_add_uniprot_mapping.R output/annotated_with_hotspots.maf data/variants_with_uniprot.tsv cancer_variants_annotation_pipeline/data_cache\n")
+  message("\nUsage: Rscript scripts/02_add_uniprot_mapping.R <input_file> <output_file> [cache_dir]")
+  message("Example: Rscript scripts/02_add_uniprot_mapping.R output/annotated_with_hotspots.maf data/variants_with_uniprot.tsv cancer_variants_annotation_pipeline/data_cache\n")
   stop("Missing required arguments. Please provide at least input and output file paths.")
 }
 

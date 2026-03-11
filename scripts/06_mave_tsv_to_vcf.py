@@ -4,7 +4,7 @@ Somatic Variant file (.tsv) to VCF format
 Preparation for MAVE annotation 
 ====================================================================
 
-Script: 07_mave_tsv_to_vcf.py 
+Script: 06_mave_tsv_to_vcf.py 
 Author: Ane Kleiven 
 
 Major outputs: 
