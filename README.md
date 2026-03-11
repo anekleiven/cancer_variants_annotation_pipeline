@@ -22,7 +22,7 @@ Annotation pipeline that annotates somatic cancer variants with classification e
 
 `01_annotate_hotspots.py`: annotate somatic cancer variants with cancer hotspots 
 
-`01_add_uniprot_mapping.R`: annotate somatic cancer variants with UniProt accession numbers 
+`02_add_uniprot_mapping.R`: annotate somatic cancer variants with UniProt accession numbers 
 
 `03_annotate_protein_domains.py`: annotate somatic cancer variants with protein domains 
 
