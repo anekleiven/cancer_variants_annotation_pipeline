@@ -20,17 +20,17 @@ Annotation pipeline that annotates somatic cancer variants with classification e
 
 ## Pipeline Order 🤓🤓
 
-`01_annotate_hotspots.py` - annotates cancer variants with cancer hotspots 
+`01_annotate_hotspots.py`: annotate somatic cancer variants with cancer hotspots 
 
-`01_add_uniprot_mapping.R` - annotates cancer variants with uniprot accession numbers 
+`01_add_uniprot_mapping.R`: annotate somatic cancer variants with UniProt accession numbers 
 
-`03_annotate_protein_domains.py` - annotates cancer variants with protein domains 
+`03_annotate_protein_domains.py`: annotate somatic cancer variants with protein domains 
 
-`04_annotate_functional_sites.py` - annotates cancer variants with functional sites 
+`04_annotate_functional_sites.py`: annotate somatic cancer variants with functional sites 
 
-`05_annotate_germline_proximity.py` - annotates cancer variants with germline variant distances 
+`05_annotate_germline_proximity.py`: annotate somatic cancer variants with germline variant distances 
 
-`06_mave_tsv_to_vcf.py` - converts tsv file to vcf file for assembly liftover and MAVE annotation 
+`06_mave_tsv_to_vcf.py`: convert tsv file to vcf file for assembly liftover and MAVE annotation 
 
-`07_annotate_maves.py` - annotates original variant file with MAVE data 
+`07_annotate_maves.py`: annotate somatic cancer variants with MAVE data 
 
