@@ -20,7 +20,9 @@ Annotation pipeline that annotates somatic cancer variants with classification e
 
 ## Pipeline Order 🤓🤓
 
-`01_annotate_hotspots.py`: annotate somatic cancer variants with cancer hotspots 
+`01A_hotspots_long.py`: transform hotspots file to long format (one row per variant) 
+
+`01B_annotate_hotspots.py`: annotate somatic cancer variants with cancer hotspots 
 
 `02_add_uniprot_mapping.R`: annotate somatic cancer variants with UniProt accession numbers 
 
