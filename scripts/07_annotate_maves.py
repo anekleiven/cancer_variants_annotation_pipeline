@@ -155,7 +155,7 @@ def vcf_to_dataframe(vcf_path):
     mave_df = mave_df.dropna(subset=["MaveDB_score"])
     mave_df = mave_df.drop_duplicates(subset=["Hugo_Symbol", "HGVSp", "MaveDB_urn"])
 
-    # parse urn structure into components; experiment_set, experiment, score_set 
+    # split urn structure into components; experiment_set, experiment, score_set 
     mave_df["experiment_set"] = mave_df["MaveDB_urn"].str.extract(r"urn:mavedb:(\d+)")
     mave_df["experiment"]     = mave_df["MaveDB_urn"].str.extract(r"urn:mavedb:\d+-([\w]+)-")
     mave_df["score_set"]      = mave_df["MaveDB_urn"].str.extract(r"urn:mavedb:\d+-\w+-(\d+)")

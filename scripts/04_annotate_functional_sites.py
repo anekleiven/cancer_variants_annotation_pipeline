@@ -1,7 +1,7 @@
 """ 
-====================================================================
+------------------------------------------------------
 Functional Sites Annotation Script
-====================================================================
+------------------------------------------------------
 
 Script: 04_annotate_functional_sites.py 
 Author: Ane Kleiven 
@@ -16,12 +16,21 @@ Merge cancer variants with functional sites df
 Check if variant is inside or outside a functional site 
 
 """
+
+#-----------------------------------------------------
+# Import libraries 
+#-----------------------------------------------------
+
 import argparse
 from pathlib import Path
 import requests
 import pandas as pd
 import time
 from tqdm import tqdm
+
+#-----------------------------------------------------
+# Define get_args() function 
+#-----------------------------------------------------
 
 def get_args(): 
     parser = argparse.ArgumentParser(
@@ -54,6 +63,9 @@ def get_args():
 
     return parser.parse_args()
 
+#-----------------------------------------------------
+# Define get_functional_sites() function 
+#-----------------------------------------------------
 
 def get_functional_sites(uniprot_id):
     url = f"https://rest.uniprot.org/uniprotkb/{uniprot_id}.json"
@@ -90,6 +102,9 @@ def get_functional_sites(uniprot_id):
             })
     return features
 
+#-----------------------------------------------------
+# Define find_overlapping_sites() function 
+#-----------------------------------------------------
 
 def find_overlapping_sites(row, sites_dict):
     """
@@ -139,6 +154,9 @@ def find_overlapping_sites(row, sites_dict):
     else:
         return "NA", "NA", False
 
+#-----------------------------------------------------
+# Define annotate_with_functional_sites() function 
+#-----------------------------------------------------
 
 def annotate_with_functional_sites(variants, functional_sites_df) -> pd.DataFrame:
     """
@@ -189,6 +207,9 @@ def annotate_with_functional_sites(variants, functional_sites_df) -> pd.DataFram
     # Return df 
     return variants
 
+#-----------------------------------------------------
+# Define main() function 
+#-----------------------------------------------------
 
 def main(): 
     args = get_args() 
@@ -237,6 +258,8 @@ def main():
     annotated.to_csv(args.output, sep="\t", index=False) 
     print(f"Annotated variants file saved to: {args.output}\n")
 
+    
+    print("Functional site annotation complete!🥳🥳")
 
 if __name__ == "__main__":
     main()
