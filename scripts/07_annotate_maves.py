@@ -191,7 +191,7 @@ def process_dataset(vcf_path, tsv_path, out_path, dataset_name):
     Help function to process MAVE datasets
     
     """
-    print(f"\nProcessing {dataset_name}")
+    print(f"\n--Processing {dataset_name}--")
 
     if not vcf_path.exists() or not tsv_path.exists():
         print(f"Skipping {dataset_name}: Input files not found.")
@@ -228,7 +228,7 @@ def process_dataset(vcf_path, tsv_path, out_path, dataset_name):
     # Save expanded file (for MAVE-analysis) 
     expanded_path = out_path.with_name(out_path.stem + "_expanded" + out_path.suffix)
     merged.to_csv(expanded_path, sep="\t", index=False)
-    print(f"Written (expanded): {expanded_path}")
+    print(f"Written (expanded): {expanded_path}\n.")
 
 
 def main():
