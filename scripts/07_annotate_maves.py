@@ -1,6 +1,6 @@
 """ 
 ====================================================================
-Annotate somatic variant data with MAVEs
+Annotate variant data with MAVEs
 ====================================================================
 
 Script: 07_annotate_maves.py 
@@ -8,7 +8,7 @@ Author: Ane Kleiven
 
 Major outputs: 
   1. Extract MAVE score, gene and HGVSp from the .vcf file
-  2. Load somatic variant data 
+  2. Load variant data 
   3. Merge MAVE data with the original variant data file (.tsv) 
 
 
@@ -23,28 +23,50 @@ from pathlib import Path
 # create argparse function for user input file paths 
 def getargs(): 
     parser = argparse.ArgumentParser(
-        description="Merge MAVE annotated data with the original somatic variant file (.tsv)"
+        description="Merge MAVE annotated data with .tsv variant file"
     ) 
 
     parser.add_argument(
-        "--mave", 
+        "--mave_somatic", 
         type=Path, 
         default="output/somatic_variants_with_maves.vcf",
-        help="Path to the MAVE annotated input file (e.g. output/somatic_variants_with_maves.vcf)"
+        help="Path to the MAVE annotated input file with somatic variants."
     )
 
     parser.add_argument(
-        "--input", 
+        "--mave_neutral_clinvar", 
+        type=Path, 
+        default="output/neutral_clinvar_with_maves.vcf",
+        help="Path to the MAVE annotated input file with neutral germline ClinVar variants."
+    )
+
+    parser.add_argument(
+        "--somatic_variants", 
         type=Path, 
         default="output/variants_with_germline_proximity.tsv",
-        help="Path to the somatic variant input file (e.g. output/variants_with_germline_proximity.tsv)"
+        help="Path to the somatic variant file."
     )
 
     parser.add_argument(
-        "--output",
+        "--neutral_clinvar", 
+        type=Path,
+        default="output/neutral_clinvar_filtered.tsv", 
+        help="Path to the ClinVar variant file containing neutral germline variants."
+
+    )
+
+    parser.add_argument(
+        "--output_somatic",
         type=Path,
         default="output/variants_with_maves.tsv",
         help="Path to the annotated output variant file (e.g. output/variants_with_maves.tsv)"
+    )
+
+    parser.add_argument(
+        "--output_neutral_clinvar",
+        type=Path, 
+        default="output/clinvar_with_maves.tsv",
+        help="Path to the annotated .tsv file from ClinVar."
     )
 
     return parser.parse_args() 
@@ -62,7 +84,6 @@ def vcf_to_dataframe(vcf_path):
     """
     Analyze VEP VCF file and return a df with one row per CSQ entry per experiment,
     containing: Hugo_Symbol, HGVSp, MaveDB_score, MaveDB_urn, MaveDB_nt, MaveDB_pro.
-    Scores are normalized (z-score) per MaveDB_urn (experiment).
     Only rows with a MaveDB_score are kept.
     """
 
@@ -165,45 +186,69 @@ def vcf_to_dataframe(vcf_path):
     return mave_df
 
 
-def main(somatic_variants, vcf_path, out_path):
+def process_dataset(vcf_path, tsv_path, out_path, dataset_name):
+    """
+    Help function to process MAVE datasets
     
+    """
+    print(f"\nProcessing {dataset_name}")
+
+    if not vcf_path.exists() or not tsv_path.exists():
+        print(f"Skipping {dataset_name}: Input files not found.")
+        return
+
     print(f"Parsing VCF: {vcf_path}")
     mave_df = vcf_to_dataframe(vcf_path)
-
     if not mave_df.empty:
-        mave_df["HGVSp"] = mave_df["HGVSp"].str.strip() 
+        mave_df["HGVSp"] = mave_df["HGVSp"].str.strip()
 
-    print(f"Loading somatic variant file: {somatic_variants}")
-    somatic_variants = pd.read_csv(somatic_variants, sep="\t", low_memory=False)
-    print(f"Somatic variant file: {len(somatic_variants):,} variants")
+    print(f"Loading TSV: {tsv_path}")
+    df = pd.read_csv(tsv_path, sep="\t", low_memory=False)
 
-    if "HGVSp" in somatic_variants.columns: 
-        somatic_variants["HGVSp"] = somatic_variants["HGVSp"].str.strip() 
+    # Handle GeneSymbol/Hugo_Symbol column
+    if "GeneSymbol" in df.columns and "Hugo_Symbol" not in df.columns:
+        print("Renaming 'GeneSymbol' to 'Hugo_Symbol' before merging..")
+        df = df.rename(columns={"GeneSymbol": "Hugo_Symbol"})
 
-    print("Joining on Hugo_Symbol + HGVSp...")
-    # a variant with scores in multiple experiments gets multiple rows
-    merged_variants = somatic_variants.merge(mave_df, on=["Hugo_Symbol", "HGVSp"], how="left")
+    if "HGVSp" in df.columns:
+        df["HGVSp"] = df["HGVSp"].str.strip()
 
-    n_scored = merged_variants["MaveDB_score"].notna().sum()
-    print(f"Variants with MaveDB score: {n_scored:,} / {len(merged_variants):,} ({100*n_scored/len(merged_variants):.1f}%)")
+    print(f"Joining {dataset_name} on Hugo_Symbol + HGVSp...")
+    merged = df.merge(mave_df, on=["Hugo_Symbol", "HGVSp"], how="left")
 
-    # Save one file for none-Mave-analyses 
-    # One row per variant
-    # Highest MAVE score is kept if MaveScore
-    variants_unique = (merged_variants
-                    .sort_values("MaveDB_score", ascending=False, na_position="last")
-                    .drop_duplicates(subset=["Hugo_Symbol", "HGVSp"]))
+    n_scored = merged["MaveDB_score"].notna().sum()
+    print(f"Variants with MaveDB score: {n_scored:,} / {len(merged):,} ({100*n_scored/len(merged):.1f}%)")
 
-    variants_unique.to_csv(out_path, sep="\t", index=False)
+    # Save deduplicated file (one row per variant, largest score)
+    unique_out = merged.sort_values("MaveDB_score", ascending=False, na_position="last") \
+    .drop_duplicates(subset=["Hugo_Symbol", "HGVSp"])
+    unique_out.to_csv(out_path, sep="\t", index=False)
     print(f"Written (deduplicated): {out_path}")
 
-    # Save expanded file (one row per variant-experiment pair) - for MAVE analyses only
-    out_path_expanded = out_path.with_name(out_path.stem + "_expanded" + out_path.suffix)
-    merged_variants.to_csv(out_path_expanded, sep="\t", index= False) 
-    print(f"Written (expanded): {out_path_expanded}")
+    # Save expanded file (for MAVE-analysis) 
+    expanded_path = out_path.with_name(out_path.stem + "_expanded" + out_path.suffix)
+    merged.to_csv(expanded_path, sep="\t", index=False)
+    print(f"Written (expanded): {expanded_path}")
 
+
+def main():
+    args = getargs()
+
+    # 1. Somatic variants 
+    process_dataset(
+        args.mave_somatic, 
+        args.somatic_variants, 
+        args.output_somatic, 
+        "Somatic"
+    )
+
+    # 2. ClinVar neutral variants 
+    process_dataset(
+        args.mave_neutral_clinvar, 
+        args.neutral_clinvar, 
+        args.output_neutral_clinvar, 
+        "ClinVar"
+    )
 
 if __name__ == "__main__":
-    args = getargs() 
-    main(args.input, args.mave, args.output)
-
+    main()
