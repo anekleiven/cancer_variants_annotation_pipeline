@@ -1,8 +1,9 @@
-"""
-====================================================================
-Protein Domain Annotation Script
-====================================================================
 
+# ====================================================================
+# Protein Domain Annotation
+# ====================================================================
+
+""" 
 Script: 03_annotate_protein_domains.py
 Author: Ane Kleiven
 
@@ -13,8 +14,11 @@ Purpose:
 Input:
     - Variants annotated with UniProt accession numbers 
       (e.g., data/variants_with_uniprot.tsv)
-    - Pfam domain locations file (Pfam-A.regions.tsv.gz)
-    - Pfam clan metadata file (Pfam-A.clans.tsv.gz)
+    - Pfam domain locations file and Pfam clan metadata file. 
+      Can be accessed from: https://ftp.ebi.ac.uk/pub/databases/Pfam/releases/Pfam38.2/
+      File names: 
+            Pfam-A.regions.tsv.gz
+            Pfam-A.clans.tsv.gz
 
 Output:
     - TSV file of cancer variants annotated with Pfam domains and clans 
@@ -75,7 +79,7 @@ def get_args():
 
 
 # -----------------------------------------------------------
-# 1. Load variants with UniProt accessions
+# Load variants with UniProt accessions
 # -----------------------------------------------------------
 
 def load_variants_with_uniprot(input_file: Path) -> pd.DataFrame:
@@ -101,7 +105,7 @@ def load_variants_with_uniprot(input_file: Path) -> pd.DataFrame:
 
 
 # -----------------------------------------------------------
-# 2. Load Pfam domain locations (Pfam-A.regions.tsv.gz)
+# Load Pfam domain locations (Pfam-A.regions.tsv.gz)
 # -----------------------------------------------------------
 
 def load_pfam_regions(pfam_regions_file: Path, relevant_uniprot: list, chunksize: int = 100000) -> pd.DataFrame:
@@ -144,7 +148,7 @@ def load_pfam_regions(pfam_regions_file: Path, relevant_uniprot: list, chunksize
     return df
 
 # -----------------------------------------------------------
-# 3. Load Pfam clans 
+# Load Pfam clans 
 # -----------------------------------------------------------
 
 def load_pfam_clans(pfam_clans_file: Path) -> pd.DataFrame:
@@ -162,7 +166,7 @@ def load_pfam_clans(pfam_clans_file: Path) -> pd.DataFrame:
 
 
 # -----------------------------------------------------------
-# 4. Merge dataframes
+# Merge dataframes
 # -----------------------------------------------------------
 
 def merge_variants_with_pfam(
@@ -216,27 +220,27 @@ def merge_variants_with_pfam(
     return out
 
 # -----------------------------------------------------------
-# 5. Main function 
+# Main function 
 # -----------------------------------------------------------
 
 def main():
     args = get_args() 
 
-    # 1. Load variants first
+    # Load variants
     variants = load_variants_with_uniprot(args.input)
     
-    # 2. Get list of UniProt IDs to use as a filter
+    # Get list of UniProt IDs to use as a filter
     relevant_uniprot = variants["UNIPROT_ACCESSION"].unique().tolist()
 
-    # 3. Load Pfam using filter
+    # Load Pfam data using filter
     pfam_domains = load_pfam_regions(args.pfam, relevant_uniprot)
-    
     pfam_clans = load_pfam_clans(args.pclan)
 
+    # Merge variants with pfam 
     annotated = merge_variants_with_pfam(variants, pfam_domains, pfam_clans)
-
+    
+    # Save annotated file 
     annotated.to_csv(args.output, sep="\t", index=False)
-
     print(f"\nSaved annotated variant file to: {args.output}\n")
 
     

@@ -1,26 +1,36 @@
-""" 
-====================================================================
-Annotate variant data with MAVEs
-====================================================================
 
+#====================================================================
+# Annotate variant data with MAVEs
+#====================================================================
+
+""" 
 Script: 07_annotate_maves.py 
 Author: Ane Kleiven 
 
+This script requires a Mave annotated VCF file. 
+Mave annotation can be performed using the Ensembl VEP with MaveDB Plugin. 
+
 Major outputs: 
   1. Extract MAVE data, gene and HGVSp from the .vcf file
-  2. Load variant data (.tsv file)
+  2. Load original variant data (.tsv file)
   3. Merge MAVE data with the original variant data file (.tsv) 
-
 
 """
 
-# import libraries 
+# -------------------------------------------
+# Import libraries 
+# -------------------------------------------
+
 import argparse
 import pandas as pd 
 import re 
 from pathlib import Path
 
-# create argparse function for user input file paths 
+
+# -------------------------------------------
+# Argparse function for user input file paths
+# -------------------------------------------
+
 def getargs(): 
     parser = argparse.ArgumentParser(
         description="Merge MAVE annotated data with .tsv variant file"
@@ -29,6 +39,7 @@ def getargs():
     parser.add_argument(
         "--mave_somatic", 
         type=Path, 
+        required=False, 
         default="output/somatic_variants_with_maves.vcf",
         help="Path to the MAVE annotated input file with somatic variants."
     )
@@ -36,6 +47,7 @@ def getargs():
     parser.add_argument(
         "--mave_neutral_clinvar", 
         type=Path, 
+        required=False, 
         default="output/neutral_clinvar_with_maves.vcf",
         help="Path to the MAVE annotated input file with neutral germline ClinVar variants."
     )
@@ -43,6 +55,7 @@ def getargs():
     parser.add_argument(
         "--somatic_variants", 
         type=Path, 
+        required=False, 
         default="output/variants_with_germline_proximity.tsv",
         help="Path to the somatic variant file."
     )
@@ -50,6 +63,7 @@ def getargs():
     parser.add_argument(
         "--neutral_clinvar", 
         type=Path,
+        required=False, 
         default="output/neutral_clinvar_filtered.tsv", 
         help="Path to the ClinVar variant file containing neutral germline variants."
 
@@ -58,6 +72,7 @@ def getargs():
     parser.add_argument(
         "--output_somatic",
         type=Path,
+        required=False,
         default="output/variants_with_maves.tsv",
         help="Path to the annotated output variant file (e.g. output/variants_with_maves.tsv)"
     )
@@ -65,6 +80,7 @@ def getargs():
     parser.add_argument(
         "--output_neutral_clinvar",
         type=Path, 
+        required=False, 
         default="output/clinvar_with_maves.tsv",
         help="Path to the annotated .tsv file from ClinVar."
     )
@@ -72,18 +88,25 @@ def getargs():
     return parser.parse_args() 
 
 
+# -------------------------------------------
+# Strip prefix from hgvsp (Mave VCF file)
+# -------------------------------------------
+
 def strip_prefix(hgvsp):
     """Remove transcript prefix: ENSP000123:p.Trp690Ter -> p.Trp690Ter."""
     if hgvsp and ":" in hgvsp:
         return hgvsp.split(":")[-1]
     return hgvsp
 
+# -------------------------------------------
+# Extract MaveDB functional data and convert to df 
+# -------------------------------------------
 
-# function to extract MAVE information and convert to df 
 def vcf_to_dataframe(vcf_path): 
+
     """
-    Analyze VEP VCF file and return a df with one row per CSQ entry per experiment,
-    containing: Hugo_Symbol, HGVSp, MaveDB_score, MaveDB_urn, MaveDB_nt, MaveDB_pro.
+    Analyze VEP VCF file and return a df with one row per CSQ entry per experiment.
+    Containing: Hugo_Symbol, HGVSp, MaveDB_score, MaveDB_urn, MaveDB_nt, MaveDB_pro.
     Only rows with a MaveDB_score are kept.
     """
 
@@ -92,25 +115,25 @@ def vcf_to_dataframe(vcf_path):
 
     with open(vcf_path, "r") as file: 
         for line in file:
-            # extract fields in the csq header
+            # Extract fields in the csq header
             if line.startswith("##INFO=<ID=CSQ"):   
-                # search for the word format followed by any characters that aren't a double quote
+                # Search for the word format followed by any characters that aren't a double quote
                 match = re.search(r"Format: ([^\"]+)\"", line) 
-                # remove whitespace, split by "|" and save as a list 
+                # Remove whitespace, split by "|" and save as a list 
                 csq_fields = match.group(1).strip().split("|") 
                 continue 
-            # skip remaining lines
+            # Skip remaining lines
             if line.startswith("#"):   
                 continue
-            # raise value error if header is not found 
+            # Raise value error if header is not found 
             if csq_fields is None:
                 raise ValueError("CSQ FORMAT header line not found.") 
         
-            # split lines in vcf files by tab and take the INFO column
+            # Split lines in vcf files by tab and take the INFO column
             info = line.split("\t")[7] 
-            # searches for CSQ followed by any characters that arent tab or semicolon
+            # Searches for CSQ followed by any characters that arent tab or semicolon
             csq_match = re.search(r"CSQ=([^\t;]+)", info) 
-            # lines without CSQ annotation are skipped
+            # Lines without CSQ annotation are skipped
             if not csq_match:
                 continue 
 
@@ -121,21 +144,21 @@ def vcf_to_dataframe(vcf_path):
             raw_entries = csq_match.group(1).split(",")
             entries = []
             buffer = "" 
-            # applies fragments with enough pipes to entries 
-            # fragments with fewer pipes are kept in the buffer and glued to the next comma-separated piece. 
+            # Applies fragments with enough pipes to entries 
+            # Fragments with fewer pipes are kept in the buffer and glued to the next comma-separated piece. 
             for fragment in raw_entries: 
                 buffer = f"{buffer},{fragment}" if buffer else fragment  
                 if buffer.count("|") >= n_pipes: 
                     entries.append(buffer) 
                     buffer = "" 
-            # map column names to data 
+            # Map column names to data 
             for entry in entries: 
                 f = dict(zip(csq_fields, entry.split("|"))) 
 
                 mave_score_raw = f.get("MaveDB_score", "").strip()
                 mave_scores = mave_score_raw.split("&") if mave_score_raw else []
 
-                # skip if all scores are missing/NA
+                # Skip if all scores are missing/NA
                 if not mave_scores or all(s.strip() in ("NA", "") for s in mave_scores):
                     continue
 
@@ -146,7 +169,7 @@ def vcf_to_dataframe(vcf_path):
                 hgvsp = strip_prefix(f.get("HGVSp", "").strip())
                 mave_pro = f.get("MaveDB_pro", "").strip() 
 
-                # check if hgvsp is missing/NA and we have mave protein data 
+                # Check if hgvsp is missing/NA and we have mave protein data 
                 if (not hgvsp or hgvsp == "NA") and mave_pro:
                     hgvsp = mave_pro.split("&")[0].strip() 
                 
@@ -157,7 +180,7 @@ def vcf_to_dataframe(vcf_path):
                 mave_nts  = f.get("MaveDB_nt",  "").strip().split("&")
                 mave_pros = f.get("MaveDB_pro",  "").strip().split("&")
 
-                # one row per experiment (score/urn pair)
+                # One row per experiment (score/urn pair)
                 for i, score in enumerate(mave_scores):
                     score = score.strip()
                     if not score or score == "NA":
@@ -176,7 +199,7 @@ def vcf_to_dataframe(vcf_path):
     mave_df = mave_df.dropna(subset=["MaveDB_score"])
     mave_df = mave_df.drop_duplicates(subset=["Hugo_Symbol", "HGVSp", "MaveDB_urn"])
 
-    # split urn structure into components; experiment_set, experiment, score_set 
+    # Split urn structure into components; experiment_set, experiment, score_set 
     mave_df["experiment_set"] = mave_df["MaveDB_urn"].str.extract(r"urn:mavedb:(\d+)")
     mave_df["experiment"]     = mave_df["MaveDB_urn"].str.extract(r"urn:mavedb:\d+-([\w]+)-")
     mave_df["score_set"]      = mave_df["MaveDB_urn"].str.extract(r"urn:mavedb:\d+-\w+-(\d+)")
@@ -189,7 +212,7 @@ def vcf_to_dataframe(vcf_path):
 def process_dataset(vcf_path, tsv_path, out_path, dataset_name):
     """
     Help function to process MAVE datasets
-    
+
     """
     print(f"\n--Processing {dataset_name}--")
 
@@ -234,7 +257,7 @@ def process_dataset(vcf_path, tsv_path, out_path, dataset_name):
 def main():
     args = getargs()
 
-    # 1. Somatic variants 
+    # Somatic variants 
     process_dataset(
         args.mave_somatic, 
         args.somatic_variants, 
@@ -242,7 +265,7 @@ def main():
         "Somatic"
     )
 
-    # 2. ClinVar neutral variants 
+    # ClinVar neutral variants 
     process_dataset(
         args.mave_neutral_clinvar, 
         args.neutral_clinvar, 

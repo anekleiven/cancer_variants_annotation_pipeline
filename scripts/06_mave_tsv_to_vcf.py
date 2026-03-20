@@ -1,34 +1,41 @@
-""" 
-====================================================================
-Somatic Variant file (.tsv) to VCF format 
-Preparation for MAVE annotation 
-====================================================================
 
+#====================================================================
+# TSV to VCF formatting 
+# (Preparation for MAVE annotation)
+# ====================================================================
+
+""" 
 Script: 06_mave_tsv_to_vcf.py 
 Author: Ane Kleiven 
 
 Major outputs: 
-  Prepare variant data for MAVE annotation using VEP
-  Converting .tsv file to .vcf format 
+  Prepare variant data for assembly liftover and MAVE annotation
+  Converting .tsv files to .vcf format 
 
 """
 
-# import libraries 
+# -------------------------------------------
+# Import libraries 
+# -------------------------------------------
+
 import argparse
 from pathlib import Path
 import pandas as pd
 import numpy as np 
 
+# -------------------------------------------
+# Argparse function for user input file paths
+# -------------------------------------------
 
-# create argparse function for user input file paths 
 def getargs(): 
   parser = argparse.ArgumentParser(
-    description="Prepare somatic variant data for MAVE annotation. Formatting to .vcf"
+    description="Prepare variant data for MAVE annotation. Formatting from .tsv to .vcf"
   ) 
 
   parser.add_argument(
     "--somatic_variants", 
     type=Path, 
+    required=False,
     default="output/variants_with_germline_proximity.tsv",
     help="Path to the variant input file (e.g. output/variants_with_germline_proximity.tsv)"
   )
@@ -36,6 +43,7 @@ def getargs():
   parser.add_argument(
      "--neutral_clinvar",
      type=Path, 
+     required=False,
      default= "output/neutral_clinvar_filtered.tsv",
      help="Path to the neutral variant file from ClinVar"
   )
@@ -43,6 +51,7 @@ def getargs():
   parser.add_argument(
     "--somatic_output",
     type=Path,
+    required=False,
     default="output/somatic_variants_GRCh37.vcf",
     help="Path to the annotated output variant file (e.g. output/somatic_variants_GRCh37.vcf)"
   )
@@ -50,12 +59,16 @@ def getargs():
   parser.add_argument(
      "--clinvar_output",
      type=Path, 
+     required=False,
      default= "output/neutral_clinvar_GRCh37.vcf",
      help="Path to the Clinvar vcf output file."
   )
 
   return parser.parse_args() 
 
+# -------------------------------------------
+# TSV to VCF function 
+# -------------------------------------------
 
 def tsv_to_vcf(df, mapping, output_path, source_name="Ane_Kleiven_Pipeline"):
   """
@@ -71,13 +84,13 @@ def tsv_to_vcf(df, mapping, output_path, source_name="Ane_Kleiven_Pipeline"):
   initial_count = len(df)
   print(f"Converting {initial_count} variants to VCF..")
 
-  # Finn ut hva vi skal bruke som ID
+  # Mapping ID
   if 'ID' in mapping and mapping['ID'] in df.columns:
       ids = df[mapping['ID']].astype(str)
   else:
       ids = "."
 
-  # create DF 
+  # Create vcf df 
   vcf_df = pd.DataFrame({
       "#CHROM": "chr" + df[mapping['CHROM']].astype(str).str.replace('chr', ''),
       "POS": df[mapping['POS']].astype(int),
@@ -89,17 +102,17 @@ def tsv_to_vcf(df, mapping, output_path, source_name="Ane_Kleiven_Pipeline"):
       "INFO": "GENE=" + df[mapping['GENE']].astype(str)
   })
   
-  # add EXTRA_INFO if accessible (ClinicalSignificance, ReviewStatus etc.)
+  # Add EXTRA_INFO if accessible (ClinicalSignificance, ReviewStatus etc.)
   if 'EXTRA_INFO' in mapping:
       for key, col in mapping['EXTRA_INFO'].items():
           vcf_df["INFO"] += f";{key}=" + df[col].astype(str).str.replace(" ", "_")
 
-  # wash data 
+  # Clean data 
   vcf_df = vcf_df.dropna(subset=["REF", "ALT"])
   vcf_df = vcf_df[(vcf_df["REF"] != "-") & (vcf_df["ALT"] != "-")]
   vcf_df = vcf_df[vcf_df["REF"] != vcf_df["ALT"]]
   vcf_df = vcf_df.sort_values(by=["#CHROM", "POS"], ascending=True)
-  vcf_df = vcf_df[(vcf_df["REF"].str.len() == 1) & (vcf_df["ALT"].str.len() == 1)]    # keep only SNVs 
+  vcf_df = vcf_df[(vcf_df["REF"].str.len() == 1) & (vcf_df["ALT"].str.len() == 1)]    # For simplicity: keep only SNVs 
   
   final_count = len(vcf_df)
   variants_removed = initial_count - final_count
@@ -108,7 +121,7 @@ def tsv_to_vcf(df, mapping, output_path, source_name="Ane_Kleiven_Pipeline"):
   print(f"Variants removed: {variants_removed}")
   print(f"Final variant count: {final_count}\n")
 
-  # write file with header
+  # Write file with header
   vcf_header = [
       "##fileformat=VCFv4.2",
       f"##source={source_name}",
@@ -123,11 +136,16 @@ def tsv_to_vcf(df, mapping, output_path, source_name="Ane_Kleiven_Pipeline"):
   
   print(f"VCF saved to {output_path}.\n")
 
+
+# -------------------------------------------
+# Main function 
+# -------------------------------------------
+
 def main():
   
   args = getargs() 
 
-  # SOMATIC VARIANTS 
+  # Convert somatic variant file to VCF
   somatic_df = pd.read_csv(args.somatic_variants, sep="\t", low_memory=False)
   somatic_mapping = {
     "CHROM": "Chromosome",
@@ -139,7 +157,7 @@ def main():
   
   tsv_to_vcf(somatic_df, somatic_mapping, args.somatic_output)
 
-  # NEUTRAL CLINVAR VARIANTS 
+  # Convert neutral ClinVar file to VCF 
   clinvar_df = pd.read_csv(args.neutral_clinvar, sep="\t", low_memory=False) 
   clinvar_mapping = {
      "CHROM": "Chromosome",

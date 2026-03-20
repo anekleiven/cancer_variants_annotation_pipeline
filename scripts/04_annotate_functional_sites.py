@@ -1,8 +1,9 @@
-""" 
-------------------------------------------------------
-Functional Sites Annotation Script
-------------------------------------------------------
 
+# ======================================================
+# Functional Sites Annotation
+# ======================================================
+
+""" 
 Script: 04_annotate_functional_sites.py 
 Author: Ane Kleiven 
 
@@ -12,8 +13,8 @@ Uniprot API:
     Pick out relevant functional sites (in ftype) 
     Extract residue positions and descriptions 
 
-Merge cancer variants with functional sites df 
-Check if variant is inside or outside a functional site 
+Merge cancer variants with functional sites dataframe.
+Create boolean "IN_FUNC_SITE". 
 
 """
 
@@ -111,12 +112,13 @@ def find_overlapping_sites(row, sites_dict):
     For a single variant, find all overlapping functional sites.
     Checking each variant against the dictionary of functional sites. 
     Returns semicolon-separated strings or NA.
+
     """
-    # pull the protein accession and amino acid position for a variant 
+    # Pull the protein accession number and amino acid position for a variant 
     uniprot_acc = row["UNIPROT_ACCESSION"]
     position = row["Protein_position"]
     
-    # if either uniprot_acc or position is missing, there can't be an overlap 
+    # If either uniprot_acc or position is missing, there can't be an overlap 
     if pd.isna(uniprot_acc) or pd.isna(position):
         return "NA", "NA", False
     
@@ -171,7 +173,7 @@ def annotate_with_functional_sites(variants, functional_sites_df) -> pd.DataFram
     functional_sites_df["FUNC_SITE_END"] = pd.to_numeric(functional_sites_df["FUNC_SITE_END"], errors="coerce")
     
     # Create a dictionary: {UNIPROT_ACCESSION: [list of sites]}
-    # For memory efficiency 
+    # (For memory efficiency)
     print("Building functional sites dictionary...\n")
     sites_dict = {}
     for _, row in functional_sites_df.iterrows():

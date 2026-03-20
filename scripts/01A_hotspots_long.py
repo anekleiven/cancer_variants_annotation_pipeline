@@ -1,16 +1,19 @@
-"""
-====================================================================
-Hotspot file formating script
-====================================================================
 
+# ====================================================================
+# Hotspot file formatting
+# ====================================================================
+
+"""
 Script: 01_hotspots_long.py
 Author: Ane Kleiven
 
-Script to transform the hotspots.txt file into a long format, 
-separating the different protein changes.
-
-hotspots.txt file can be downloaded here: 
+This script requires the cancer hotspots file. 
+hotspots.txt can be downloaded here: 
 https://www.cancerhotspots.org/#/home
+
+Major output: 
+- Transforms the hotspots.txt file into a long format, 
+  separating different protein changes in unique rows. 
 
 Example usage: 
     python hotspots_long.py \
@@ -32,7 +35,7 @@ def get_args():
         type=Path,
         required=False,
         default="/home/anekl/git/master/cancer_variants_annotation_pipeline/data/hotspots.txt",
-        help="Path to the input hotspot file."
+        help="Path to the input hotspot file (e.g. hotspots.txt)."
     )
 
     parser.add_argument(
@@ -40,7 +43,7 @@ def get_args():
         type=Path, 
         required=False,
         default="/home/anekl/git/master/cancer_variants_annotation_pipeline/data/hotspots_long.tsv",
-        help="Path to the output hotspot file."
+        help="Path to the output hotspot file e.g. hotspots_long.tsv."
     )
 
     return parser.parse_args()

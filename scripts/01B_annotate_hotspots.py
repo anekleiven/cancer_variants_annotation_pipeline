@@ -1,8 +1,9 @@
-"""
-====================================================================
-Cancer Hotspots Annotation 
-====================================================================
 
+# ====================================================================
+# Cancer Hotspots Annotation 
+# ====================================================================
+
+"""
 Script: 01B_annotate_hotspots.py
 Author: Ane Kleiven
 
@@ -10,10 +11,11 @@ Script to annotate cancer hotspots to cancer variants
 
 Input: 
 	OncoKB annotated cancer variants (.MAF file) 
-	Hotspots variant file (long format: one row per variant)
+	Hotspots variant file (long format: one row per variant), see '01A_hotspots_long.py' 
 
 Join tables by: 
 'Hugo_Symbol' and 'HGVSp_Short'
+
 """
 
 import pandas as pd
@@ -45,29 +47,29 @@ def get_args():
 		"--output",
 		type=Path,
 		required=False,
-		default=Path("/home/anekl/git/master/cancer_variants_annotation_pipeline/output/annotated_with_hotspots.maf"),
-		help="Path to save the annotated output file."
+		default=Path"/home/anekl/git/master/cancer_variants_annotation_pipeline/output/annotated_with_hotspots.maf",
+		help="Path to save the annotated output file (e.g. annotated_with_hotspots.maf)."
 	)
 	
 	return parser.parse_args() 
 
 
 def main():
-	# call get_args() to get the users input file path: 
+	# Call get_args() to get the users input file path: 
 	args=get_args()
 
-	# load files 
-	print(f"\nLoading files...🤓\n")
+	# Load files 
+	print(f"\nLoading files..\n")
 	variants = pd.read_csv(args.input, sep="\t", low_memory=False) 
 	hotspots = pd.read_csv(args.hotspots, sep="\t", low_memory=False)
 
 	print(f"Loaded {len(variants):,} variants from {args.input.name}") 
 	print(f"Loaded {len(hotspots):,} hotspots from {args.hotspots.name}\n")
 
-	# add in_hotspot boolean 
+	# Add in_hotspot boolean column
 	hotspots["in_hotspot"] = True
 
-	# merge hotspots file with variants file
+	# Merge hotspots file with variants file
 	merged = pd.merge(
 		variants, 
 		hotspots,
@@ -77,11 +79,9 @@ def main():
 
 	merged["in_hotspot"] = merged["in_hotspot"].fillna(False) 
 
-
-	# summary
 	print(f"Variants in hotspot: {merged['in_hotspot'].sum():,}")
 
-	# save output
+	# Save output
 	merged.to_csv(args.output, sep="\t", index=False)
 	print(f"\nAnnotated file saved to:\n {args.output.resolve()} 🥳\n")
 

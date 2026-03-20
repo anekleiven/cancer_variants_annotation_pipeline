@@ -1,24 +1,20 @@
-# -----------------------------------------------------------
+
 #====================================================================
-# Uniprot mapping script
+# UniProt Mapping
 #====================================================================
 
-# Script: 02_add_uniprot_mapping.R
-# Author: Ane Kleiven
+"""
+Script: 02_add_uniprot_mapping.R
+Author: Ane Kleiven
 
-# Description:
-#   Annotates a variant dataset with UniProt accession numbers
-#   using the geneOncoX reference (Sigve Nakken)
-#
-# Usage:
-#   Rscript 02_add_uniprot_mapping.R <input_file> <output_file> [cache_dir]
-#
-# Example:
-#   Rscript scripts/02_add_uniprot_mapping.R \
-#     output/annotated_with_hotspots.maf \
-#     data/variants_with_uniprot.tsv \
-#     data_cache
-# -----------------------------------------------------------
+Description:
+  Annotates a variant dataset with UniProt accession numbers
+  using the geneOncoX reference (Sigve Nakken)
+
+Usage:
+  Rscript 02_add_uniprot_mapping.R <input_file> <output_file> [cache_dir]
+
+""" 
 
 # -----------------------------
 # Load required libraries

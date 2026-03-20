@@ -1,19 +1,23 @@
-""" 
-====================================================================
-Germline Proximity Annotation Script
-====================================================================
 
+# ====================================================================
+# Germline Proximity Annotation 
+# ====================================================================
+
+""" 
 Script: 05_annotate_germline_proximity.py 
 Author: Ane Kleiven 
+
+This script requires the ClinVar variant file. 
+The ClinVar file can be accessed here: 
+     (https://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/)
 
 Major outputs: 
   1. Loading variant data files
   2. Preprocessing of ClinVar variant file (filter variants, extract AA position) 
-     The ClinVar file be found here: (https://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/)
   3. Create dictionary of germline variants per gene, with AA positions as values
   4. Calculate the shortest germline distance for each somatic variant 
   5. Apply germline distances to somatic variant table 
-  7. Save new output file 
+  7. Save new output file (.tsv) 
 
 """
 
@@ -38,6 +42,7 @@ def getargs():
   parser.add_argument(
     "--input", 
     type=Path, 
+    required=False,
     default="output/variants_with_func_sites.tsv",
     help="Path to the variant input file (e.g. output/variants_with_func_sites.tsv)"
   )
@@ -45,6 +50,7 @@ def getargs():
   parser.add_argument(
     "--germline_variant_file",
     type=Path,
+    required=False, 
     default="data/variant_summary.txt.gz",
     help="Path to the germline variant file (e.g. data/variant_summary.txt)"
   )
@@ -52,6 +58,7 @@ def getargs():
   parser.add_argument(
     "--output",
     type=Path,
+    required=False,
     default="output/variants_with_germline_proximity.tsv",
     help="Path to the annotated output variant file (e.g. output/variants_with_germline_proximity.tsv)"
   )
@@ -168,7 +175,7 @@ def main():
   )
 
   print("Preview of the grouped germline dictionary:")
-  print(dict(list(germline_per_gene.items())[:3]), "\n")      # First three key-value pairs
+  print(dict(list(germline_per_gene.items())[:3]), "\n")    
 
 
   #-----------------------------------------------------
