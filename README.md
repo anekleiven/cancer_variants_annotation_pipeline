@@ -15,7 +15,17 @@ final master file used for downstream analysis.
 - Python 3.10+
 - R 4.2+
 
-## External dependencies 
+## External Data Requirements 
+Before running the pipeline, the following files must be downloaded manually:¨
+| File | Source | Used in Script |
+| :--- | :--- | :--- |
+| `hotspots.txt` | [cancerhotspots.org](https://www.cancerhotspots.org) | `01A_hotspots_long.py` |
+| `Pfam-A.regions.tsv.gz` | [EMBL-EPI FTP](https://ftp.ebi.ac.uk/pub/databases/Pfam/releases/Pfam38.2/) | `03_annotate_protein_domains.py` |
+| `Pfam-A.clans.tsv.gz` | [EMBL-EPI FTP](https://ftp.ebi.ac.uk/pub/databases/Pfam/releases/Pfam38.2/) | `03_annotate_protein_domains.py` |
+| `variant_summary.txt.gz` | [NCBI ClinVar FTP](https://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/) | `05_annotate_germline_proximity.py` |
+
+
+## External Dependencies 
 - CrossMap (v.0.7.3): Used for GRCh37 to GRCh38 liftover.
 - Docker: Required to run the Ensembl VEP container. 
 - Ensembl VEP (v.115): With the MaveDB Plugin and GRCh38 cache. 
