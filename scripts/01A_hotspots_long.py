@@ -30,6 +30,7 @@ def get_args():
     parser.add_argument(
         "--input",
         type=Path,
+        required=False,
         default="/home/anekl/git/master/cancer_variants_annotation_pipeline/data/hotspots.txt",
         help="Path to the input hotspot file."
     )
@@ -46,6 +47,7 @@ def get_args():
 
 
 def main():
+    
     args=get_args() 
 
     print(f"\nTransforming hotspots file into long format:\n")

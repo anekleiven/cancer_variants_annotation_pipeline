@@ -7,28 +7,32 @@ Script: 05_annotate_germline_proximity.py
 Author: Ane Kleiven 
 
 Major outputs: 
-  1. Loading variant data files 
-  2. Preprocessing of germline variant file (filter variants, extract AA position) 
-     Germline variant file be found here: (https://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/)
+  1. Loading variant data files
+  2. Preprocessing of ClinVar variant file (filter variants, extract AA position) 
+     The ClinVar file be found here: (https://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/)
   3. Create dictionary of germline variants per gene, with AA positions as values
-  4. Calculate the shortest germline proximity for each somatic variant 
-  5. Apply germline proximity to somatic variant table 
+  4. Calculate the shortest germline distance for each somatic variant 
+  5. Apply germline distances to somatic variant table 
   7. Save new output file 
 
 """
 
-# import libraries 
+#-----------------------------------------------------
+# Import libraries 
+#-----------------------------------------------------
 
 import argparse
 from pathlib import Path
 import pandas as pd
 import numpy as np 
 
-# create argparse function for user input file paths 
+#-----------------------------------------------------
+# Create argparse function for user input file paths 
+#-----------------------------------------------------
 
 def getargs(): 
   parser = argparse.ArgumentParser(
-    description="Annotate somatic cancer variants with germline variant proximity"
+    description="Annotate somatic cancer variants with distance to known pathogenic germline variants."
   ) 
 
   parser.add_argument(
@@ -55,13 +59,15 @@ def getargs():
   return parser.parse_args() 
 
 
+#-----------------------------------------------------
+# Main() function 
+#-----------------------------------------------------
 
-# create main function 
 def main(): 
 
   args = getargs() 
 
-  # load files needed for annotation 
+  # Load files needed for annotation 
   print("Loading files needed for annotation of germline proximity..\n")
 
   print("Reading somatic variant file..")
@@ -69,7 +75,7 @@ def main():
   print(f"Loaded {len(somatic_variants):,} somatic variants from {args.input.name}\n")
 
   print("Reading germline variant file (filtered)")
-  # choose germline columns to read 
+  # Choose germline columns to read 
   germline_cols = [
     "Assembly",
     "Origin",
@@ -79,10 +85,10 @@ def main():
     "ClinicalSignificance"
   ]
 
-  # only include gene id's present in the somatic variant file
+  # Only include gene ID's present in the somatic variant file
   somatic_gene_ids = set(somatic_variants["Entrez_Gene_Id"].dropna().unique())
 
-  # read file in chunks to save memory 
+  # Read file in chunks to save memory 
   chunks =  []
 
   for chunk in pd.read_csv(
@@ -99,11 +105,11 @@ def main():
   print(f"Loaded {len(germline_variants):,} variants from {args.germline_variant_file.name}\n")
 
   # Extract variants that are:
-  #   From assembly GRCh37
-  #   Pathogenic and Likely Pathogenic variants 
-  #   Origin == germline
+  #   From assembly GRCh37 (Assembly)
+  #   Pathogenic and Likely Pathogenic variants (ClinicalSignificance)
+  #   Germling (Origin) 
 
-  print("Filtering variants to only include germline Pathogenic/LikelyPathogenic variants from assembly GRCh37..\n")
+  print("Filtering variants to only include germline Pathogenic/Likely Pathogenic variants from assembly GRCh37..\n")
 
   germline_variants_filtered = germline_variants[
       (germline_variants["Assembly"] == "GRCh37") &
@@ -118,7 +124,6 @@ def main():
   # Exluding frameshift and complex variants
 
   print("Extracting HGVSp from 'Name' column..\n")
-
   germline_variants_filtered["HGVSp"] = (
       germline_variants_filtered["Name"]
       .str.split(" ", n=1)
@@ -127,7 +132,6 @@ def main():
   ).copy()
 
   print("Extracting amino acid position from HGVSp using regex..\n")
-
   germline_variants_filtered["AA_Position_Germline"] = (
     germline_variants_filtered["HGVSp"]
     .str.extract(r"p\.[A-Za-z]{3}(\d+)[A-Za-z]{3}")
@@ -164,10 +168,14 @@ def main():
   )
 
   print("Preview of the grouped germline dictionary:")
-  print(dict(list(germline_per_gene.items())[:3]), "\n")      # first three key-value pairs
+  print(dict(list(germline_per_gene.items())[:3]), "\n")      # First three key-value pairs
 
-  
-  # define a function to calculate germline proximity per somatic variant (row by row)
+
+  #-----------------------------------------------------
+  # Calculate germline proximity per somatic variant 
+  # (row by row)
+  #-----------------------------------------------------
+
   def compute_germline_proximity(row):
       gene_id = row["Entrez_Gene_Id"]
       somatic_pos = row["Protein_position"]
@@ -179,7 +187,7 @@ def main():
       return min(abs(somatic_pos - gp) for gp in germline_positions)
 
 
-  # call germline proximity function
+  # Call germline proximity function
   print("Computing germline proximity and applying distances to somatic variants..\n")
   somatic_variants["Germline_Proximity"] = somatic_variants.apply(
     compute_germline_proximity,
@@ -191,7 +199,7 @@ def main():
   print(somatic_variants[selected_columns].head(), "\n")
 
 
-  # save final annotated file: 
+  # Save final annotated file: 
   somatic_variants.to_csv(args.output, sep="\t", index=False)
   print(f"Annotated output file saved as: {args.output}\n")
 

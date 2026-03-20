@@ -7,8 +7,8 @@ Script: 07_annotate_maves.py
 Author: Ane Kleiven 
 
 Major outputs: 
-  1. Extract MAVE score, gene and HGVSp from the .vcf file
-  2. Load variant data 
+  1. Extract MAVE data, gene and HGVSp from the .vcf file
+  2. Load variant data (.tsv file)
   3. Merge MAVE data with the original variant data file (.tsv) 
 
 
