@@ -35,12 +35,11 @@ Before running the pipeline, the following files must be downloaded manually:
 
 ## Setup Instructions 🔧
 
-1.**Clone the repository:**
+1. **Clone the repository:**
 ```bash
    git clone [https://github.com/ditt-brukernavn/explore_cancer_variants.git](https://github.com/ditt-brukernavn/explore_cancer_variants.git)
    cd explore_cancer_variants
 ```
-
 2. **Create Virtual Environment:**
 `python -m venv .venv`
 
