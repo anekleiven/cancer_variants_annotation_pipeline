@@ -35,16 +35,22 @@ Before running the pipeline, the following files must be downloaded manually:
 
 ## Setup Instructions 🔧
 
-1. **Create Virtual Environment:**
+1.**Clone the repository:**
+```bash
+   git clone [https://github.com/ditt-brukernavn/explore_cancer_variants.git](https://github.com/ditt-brukernavn/explore_cancer_variants.git)
+   cd explore_cancer_variants
+```
+
+2. **Create Virtual Environment:**
 `python -m venv .venv`
 
-2. **Activate Virtual Environment:**
+3. **Activate Virtual Environment:**
 `. .venv/bin/activate`
 
-3. **Install Python Requirements:**
+4. **Install Python Requirements:**
 `pip install -r requirements.txt`
 
-4. **Install R requirements:**
+5. **Install R requirements:**
 `Rscript install_deps.R`
 
 ## Pipeline Order 
@@ -61,9 +67,9 @@ Before running the pipeline, the following files must be downloaded manually:
 
 `05_annotate_germline_proximity.py`: Annotates somatic cancer variants with the distance to pathogenic germline variants from ClinVar. 
 
-`---Manual step: Assembly Liftover---`: Run CrossMap in terminal to convert coordinates from GRCh37 to GRCh38. 
-
 `06_mave_tsv_to_vcf.py`: Converts .tsv files to .vcf files for assembly liftover and MAVE annotation. 
+
+`---Manual step: Assembly Liftover---`: Run CrossMap in terminal to convert coordinates from GRCh37 to GRCh38. 
 
 `---Manual step: VEP annotation---`: Run Ensembl VEP via Docker to annotate .VCF with MaveDB scores. 
 
