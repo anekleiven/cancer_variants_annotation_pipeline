@@ -1,10 +1,13 @@
 # Cancer Variants Annotation Pipeline 🧬🧬
 
 Annotation pipeline for somatic cancer variants. 
-Annotates variants with classification evidence such as:
-Cancer hotspots, protein domains, functional sites, pathogenic germline variant distances and MAVEs. 
 
-Required files and downloads are described in each script. 
+Annotates variants with classification evidence:
+- Cancer hotspots from cancerhotspots.org
+- Protein domains from Pfam
+- Functional sites from UniProt
+- Pathogenic germline variant distances from ClinVar 
+- Functional data from MaveDB
 
 ## Data Flow 📋
 The pipeline expects a variant file in `.tsv` format as starting input. 
@@ -16,7 +19,7 @@ final master file used for downstream analysis.
 - R 4.2+
 
 ## External Data Requirements 
-Before running the pipeline, the following files must be downloaded manually:¨
+Before running the pipeline, the following files must be downloaded manually:
 | File | Source | Used in Script |
 | :--- | :--- | :--- |
 | `hotspots.txt` | [cancerhotspots.org](https://www.cancerhotspots.org) | `01A_hotspots_long.py` |
