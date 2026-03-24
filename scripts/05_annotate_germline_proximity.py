@@ -81,7 +81,7 @@ def main():
   somatic_variants = pd.read_csv(args.input, sep="\t", low_memory=False) 
   print(f"Loaded {len(somatic_variants):,} somatic variants from {args.input.name}\n")
 
-  print("Reading germline variant file (filtered)")
+  print("Reading germline variant file (filtered)..")
   # Choose germline columns to read 
   germline_cols = [
     "Assembly",

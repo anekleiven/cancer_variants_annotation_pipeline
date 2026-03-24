@@ -47,8 +47,8 @@ def get_args():
 		"--output",
 		type=Path,
 		required=False,
-		default=Path"/home/anekl/git/master/cancer_variants_annotation_pipeline/output/annotated_with_hotspots.maf",
-		help="Path to save the annotated output file (e.g. annotated_with_hotspots.maf)."
+		default="/home/anekl/git/master/cancer_variants_annotation_pipeline/output/annotated_with_hotspots.tsv",
+		help="Path to save the annotated output file (e.g. annotated_with_hotspots.tsv)."
 	)
 	
 	return parser.parse_args() 
@@ -66,8 +66,8 @@ def main():
 	print(f"Loaded {len(variants):,} variants from {args.input.name}") 
 	print(f"Loaded {len(hotspots):,} hotspots from {args.hotspots.name}\n")
 
-	# Add in_hotspot boolean column
-	hotspots["in_hotspot"] = True
+	# Add In_Hotspot boolean column
+	hotspots["In_Hotspot"] = True
 
 	# Merge hotspots file with variants file
 	merged = pd.merge(
@@ -77,9 +77,9 @@ def main():
 		on=["Hugo_Symbol", "HGVSp_Short"]
 	)
 
-	merged["in_hotspot"] = merged["in_hotspot"].fillna(False) 
+	merged["In_Hotspot"] = merged["In_Hotspot"].fillna(False) 
 
-	print(f"Variants in hotspot: {merged['in_hotspot'].sum():,}")
+	print(f"Variants in hotspot: {merged['In_Hotspot'].sum():,}")
 
 	# Save output
 	merged.to_csv(args.output, sep="\t", index=False)

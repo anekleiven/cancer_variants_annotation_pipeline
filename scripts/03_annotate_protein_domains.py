@@ -108,7 +108,7 @@ def load_variants_with_uniprot(input_file: Path) -> pd.DataFrame:
 # Load Pfam domain locations (Pfam-A.regions.tsv.gz)
 # -----------------------------------------------------------
 
-def load_pfam_regions(pfam_regions_file: Path, relevant_uniprot: list, chunksize: int = 100000) -> pd.DataFrame:
+def load_pfam_regions(pfam_regions_file: Path, relevant_uniprot: list, chunksize: int = 50000) -> pd.DataFrame:
     """Load Pfam-A regions file and filter for relevant proteins during chunking."""
     print(f"Loading and filtering Pfam-A domain regions: {pfam_regions_file}")
 

@@ -3,22 +3,21 @@
 # UniProt Mapping
 #====================================================================
 
-"""
-Script: 02_add_uniprot_mapping.R
-Author: Ane Kleiven
 
-Description:
-  Annotates a variant dataset with UniProt accession numbers
-  using the geneOncoX reference (Sigve Nakken)
+# Script: 02_add_uniprot_mapping.R
+# Author: Ane Kleiven
 
-Usage:
-  Rscript 02_add_uniprot_mapping.R <input_file> <output_file> [cache_dir]
+# Description:
+  # Annotates a variant dataset with UniProt accession numbers
+  # using the geneOncoX reference (Sigve Nakken)
 
-""" 
+# Usage:
+  # Rscript 02_add_uniprot_mapping.R <input_file> <output_file> [cache_dir]
 
 # -----------------------------
 # Load required libraries
 # -----------------------------
+
 suppressPackageStartupMessages({
   library(tidyverse)
   library(remotes)
@@ -31,7 +30,7 @@ args <- commandArgs(trailingOnly = TRUE)
 
 if (length(args) < 2) {
   message("\nUsage: Rscript scripts/02_add_uniprot_mapping.R <input_file> <output_file> [cache_dir]")
-  message("Example: Rscript scripts/02_add_uniprot_mapping.R output/annotated_with_hotspots.maf data/variants_with_uniprot.tsv data_cache\n")
+  message("Example: Rscript scripts/02_add_uniprot_mapping.R output/annotated_with_hotspots.tsv data/variants_with_uniprot.tsv data_cache\n")
   stop("Missing required arguments. Please provide at least input and output file paths.")
 }
 
