@@ -74,3 +74,10 @@ Before running the pipeline, the following files must be downloaded manually:
 
 `07_annotate_maves.py`: Annotates somatic cancer variants with functional data from MaveDB. 
 
+
+## Recommended Sources 🛜
+
+- AACR Project GENIE: https://www.aacr.org/professionals/research/aacr-project-genie/
+- OncoKB: https://www.oncokb.org
+
+
