@@ -8,6 +8,7 @@ Annotates variants with classification evidence:
 - Functional sites from UniProt
 - Pathogenic germline variant distances from ClinVar 
 - Functional data from MaveDB
+- Tumor suppressor gene and oncogene annotations from the Network of Cancer Genes (NCG) 
 
 ## Data Flow 📋
 The pipeline expects a variant file in `.tsv` format as starting input. 
@@ -74,10 +75,13 @@ Before running the pipeline, the following files must be downloaded manually:
 
 `07_annotate_maves.py`: Annotates somatic cancer variants with functional data from MaveDB. 
 
+`08_annotate_tsg_og.R`: Annotates somatic cancer variants with tumor suppressor- and oncogene annotations from NCG using the geneOncoX R package. 
+
 
 ## Recommended Sources 🛜
 
 - AACR Project GENIE: https://www.aacr.org/professionals/research/aacr-project-genie/
 - OncoKB: https://www.oncokb.org
+- https://sigven.github.io/geneOncoX/index.html
 
 

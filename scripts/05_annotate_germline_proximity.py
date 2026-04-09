@@ -175,8 +175,7 @@ def main():
   )
 
   print("Preview of the grouped germline dictionary:")
-  print(dict(list(germline_per_gene.items())[:3]), "\n")    
-
+  print(dict(list(germline_per_gene.items())[:5]), "\n")    
 
   #-----------------------------------------------------
   # Calculate germline proximity per somatic variant 
