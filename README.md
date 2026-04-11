@@ -82,6 +82,6 @@ Before running the pipeline, the following files must be downloaded manually:
 
 - AACR Project GENIE: https://www.aacr.org/professionals/research/aacr-project-genie/
 - OncoKB: https://www.oncokb.org
-- https://sigven.github.io/geneOncoX/index.html
+- geneOncoX: https://sigven.github.io/geneOncoX/index.html
 
 
