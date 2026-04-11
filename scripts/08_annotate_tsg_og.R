@@ -19,7 +19,9 @@
 # -----------------------------
 
 suppressPackageStartupMessages({
-  library(tidyverse)})
+  library(tidyverse)
+  library(stringr)
+})
 
 # -----------------------------
 # Parse command-line arguments
@@ -29,7 +31,7 @@ args <- commandArgs(trailingOnly = TRUE)
 
 if (length(args) < 2) {
   message("\nUsage: Rscript scripts/08_annotate_tsg_og.R <input_file> <output_file> [cache_dir]")
-  message("Example: Rscript scripts/08_annotate_tsg_og.R output/variants_with_maves.tsv data/variants_tsg_og.tsv data_cache\n")
+  message("Example: Rscript scripts/08_annotate_tsg_og.R output/variants_with_maves.tsv output/variants_tsg_og.tsv data_cache\n")
   stop("Missing required arguments. Please provide at least input and output file paths.")
 }
 
@@ -99,6 +101,55 @@ variants |>
   dplyr::select(Entrez_Gene_Id, Hugo_Symbol, ncg_tsg, ncg_oncogene) |>
   head(20)
 
+
+# -----------------------------
+# Create col 'is_null_var_tsg' 
+# -----------------------------
+
+# check values in "Variant_Type"
+table(variants$Consequence)
+
+# define consequence types for null variants 
+null_pattern <- paste(
+  "stop_gained",                   # Nonsense
+  "frameshift_variant",            # Frameshift
+  "splice_acceptor_variant",       # Canonical splice ±1,2
+  "splice_donor_variant",          # Canonical splice ±1,2
+  "start_lost",                    # Initiation codon
+  sep = "|"
+)
+
+# set NA values in ncg_tsg and ncg_oncogene to FALSE
+variants <- variants |>
+  mutate(
+    ncg_tsg = replace_na(ncg_tsg, FALSE),
+    ncg_oncogene = replace_na(ncg_oncogene, FALSE)
+  )
+
+# create null variant  and null variant in tsg column 
+variants <- variants |>
+  mutate(
+    is_null_variant = str_detect(Consequence, null_pattern),
+    is_null_var_tsg = is_null_variant & (ncg_tsg == TRUE)
+  ) |>
+  mutate(
+    is_null_variant = replace_na(is_null_variant, FALSE),
+    is_null_var_tsg = replace_na(is_null_var_tsg, FALSE)
+  )
+
+# view results
+message("Number of null variants in dataset:")
+table(variants$is_null_variant)
+message("\nNumber of null variants in tumor suppressor genes:")
+table(variants$is_null_var_tsg)
+
+# Check oncogenicity 
+message("\nCross-tab: All Null Variants vs Oncogenicity")
+table(Oncogenic = variants$ONCOGENIC, Null_Variant = variants$is_null_variant)
+
+# Check oncogenicity 
+message("\nCross-tab: Null Variants in TSG vs Oncogenicity")
+table(Oncogenic = variants$ONCOGENIC, Null_in_TSG = variants$is_null_var_tsg)
 
 # -----------------------------
 # Save annotate dataset to .tsv 
