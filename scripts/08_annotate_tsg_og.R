@@ -21,6 +21,7 @@
 suppressPackageStartupMessages({
   library(tidyverse)
   library(stringr)
+  library(data.table)
 })
 
 # -----------------------------
@@ -76,10 +77,15 @@ gene_annotations <- geneOncoX::get_basic(cache_dir = cache_dir, force_download =
 # -----------------------------
 # Load variant dataset
 # -----------------------------
-message("\nReading variant data..")
-variants <- readr::read_tsv(input_file, show_col_types = FALSE)
-message("\nLoaded ", nrow(variants), " variants.\n")
 
+message("\nReading variant data..")
+
+variants <- data.table::fread(input_file, 
+                  sep = "\t", 
+                  colClasses = "character", 
+                  na.strings = c("", "NA"))
+
+message("\nLoaded ", nrow(variants), " variants.\n")
 
 # -----------------------------
 # Annotate dataset with
@@ -93,6 +99,10 @@ gene_annotations_filtered <- gene_annotations$records |>
 head(gene_annotations_filtered) 
 
 # join tables 
+variants <- variants |>
+  mutate(Entrez_Gene_Id = as.numeric(Entrez_Gene_Id))
+
+
 variants <- variants |>
   dplyr::left_join(gene_annotations_filtered, by = c("Entrez_Gene_Id" = "entrezgene"))
 
@@ -122,8 +132,8 @@ null_pattern <- paste(
 # set NA values in ncg_tsg and ncg_oncogene to FALSE
 variants <- variants |>
   mutate(
-    ncg_tsg = replace_na(ncg_tsg, FALSE),
-    ncg_oncogene = replace_na(ncg_oncogene, FALSE)
+    ncg_tsg = as.logical(replace_na(ncg_tsg, FALSE)),
+    ncg_oncogene = as.logical(replace_na(ncg_oncogene, FALSE))
   )
 
 # create null variant  and null variant in tsg column 
@@ -135,6 +145,9 @@ variants <- variants |>
   mutate(
     is_null_variant = replace_na(is_null_variant, FALSE),
     is_null_var_tsg = replace_na(is_null_var_tsg, FALSE)
+  )|>
+  mutate(
+    across(everything(), as.character)
   )
 
 # view results
@@ -155,8 +168,17 @@ table(Oncogenic = variants$ONCOGENIC, Null_in_TSG = variants$is_null_var_tsg)
 # Save annotate dataset to .tsv 
 # -----------------------------
 
+variants_final <- variants %>%
+  mutate(across(everything(), as.character)) %>%
+  mutate(across(everything(), ~replace_na(., "")))
+
 message("\nSaving annotated variants to file...")
-readr::write_tsv(variants, output_file)
+fwrite(variants_final, 
+       output_file, 
+       sep = "\t",      
+       na = "",        
+       quote = FALSE,
+       scipen = 999)
 
 message("\nDone! Variants with TSG and OG annotations written to:")
 message(output_file)

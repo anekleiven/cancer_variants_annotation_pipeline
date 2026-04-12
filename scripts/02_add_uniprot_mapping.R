@@ -21,6 +21,7 @@
 suppressPackageStartupMessages({
   library(tidyverse)
   library(remotes)
+  library(data.table)
 })
 
 # -----------------------------
@@ -76,9 +77,9 @@ gene_xref <- geneOncoX::get_gencode(cache_dir = cache_dir)
 # Prepare gene–UniProt mapping
 # -----------------------------
 message("\nPreparing gene symbol to UniProt mapping table...")
-gene_to_uniprot <- gene_xref$records$grch37 %>%
-  dplyr::select(symbol, uniprot_acc) %>%
-  dplyr::filter(!is.na(uniprot_acc)) %>%
+gene_to_uniprot <- gene_xref$records$grch37 |>
+  dplyr::select(symbol, uniprot_acc)|>
+  dplyr::filter(!is.na(uniprot_acc)) |>
   dplyr::distinct()
 
 message("Loaded ", nrow(gene_to_uniprot), " unique gene to UniProt mappings.\n")
@@ -87,22 +88,28 @@ message("Loaded ", nrow(gene_to_uniprot), " unique gene to UniProt mappings.\n")
 # Load variant dataset
 # -----------------------------
 message("\nReading variant data..")
-variants <- readr::read_tsv(input_file, show_col_types = FALSE)
+
+variants <- readr::read_tsv(
+  input_file, 
+  col_names = TRUE,
+  col_types = readr::cols(.default = "c"),
+  na = c("", "NA")
+)
 message("\nLoaded ", nrow(variants), " variants.\n")
 
 # -----------------------------
 # Map gene symbols to UniProt accessions
 # -----------------------------
 message("\nMapping variants to UniProt accessions..\n")
-variants_with_uniprot <- variants %>%
+variants_with_uniprot <- variants |>
   dplyr::left_join(gene_to_uniprot, by = c("Hugo_Symbol" = "symbol"))
 
 # separate mapped and unmapped
-mapped <- variants_with_uniprot %>% dplyr::filter(!is.na(uniprot_acc))
-unmapped  <- variants_with_uniprot %>% dplyr::filter(is.na(uniprot_acc)) %>% dplyr::select(-uniprot_acc)
+mapped <- variants_with_uniprot |> dplyr::filter(!is.na(uniprot_acc))
+unmapped  <- variants_with_uniprot |> dplyr::filter(is.na(uniprot_acc)) |> dplyr::select(-uniprot_acc)
 
-unmapped_genes <- variants_with_uniprot %>%
-  dplyr::filter(is.na(uniprot_acc)) %>%
+unmapped_genes <- variants_with_uniprot |>
+  dplyr::filter(is.na(uniprot_acc)) |>
   count(Hugo_Symbol, sort = TRUE)
 
 head(unmapped_genes, 10)
@@ -119,7 +126,19 @@ message("Unmapped:      ", unmapped_count)
 # -----------------------------
 
 message("\nSaving annotated variants to file...")
-readr::write_tsv(variants_with_uniprot, output_file)
+
+variants_to_save <- variants_with_uniprot |>
+  mutate(across(everything(), as.character)) |>
+  mutate(across(everything(), ~replace_na(., "")))
+
+data.table::fwrite(
+  variants_to_save, 
+  output_file, 
+  sep = "\t", 
+  na = "", 
+  quote = FALSE, 
+  scipen = 999
+)
 
 message("\nDone! Variants with UniProt accessions written to:")
 message(output_file)
