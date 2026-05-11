@@ -63,29 +63,26 @@ The pipeline expects a variant file in `.tsv` format as starting input.
 Each script (01-08) appends specific annotations to the dataset, resulting in a 
 final master file used for downstream analysis.
 
-## Pipeline Order 
 
-`01A_hotspots_long.py`: Transforms hotspot.txt to long format (one row per variant). 
+## Pipeline Workflow 🚀
 
-`01B_annotate_hotspots.py`: Annotates somatic cancer variants with hotspot data from cancerhotspots.org. 
+The pipeline consists of a series of scripts. Each step appends specific annotations to the dataset, sequentially building the final variant file.
 
-`02_add_uniprot_mapping.R`: Annotates somatic cancer variants with UniProt accession numbers using the geneOncoX R package. 
+| Step | Script / Action | Description |
+| :--- | :--- | :--- |
+| **01A** | `01A_hotspots_long.py` | Transforms raw `hotspot.txt` into a long-format TSV. |
+| **01B** | `01B_annotate_hotspots.py` | Annotates variants with hotspot data from *cancerhotspots.org*. |
+| **02** | `02_add_uniprot_mapping.R` | Maps variants to UniProt accession numbers using `geneOncoX`. |
+| **03** | `03_annotate_protein_domains.py` | Annotates variants with protein domain information from *Pfam*. |
+| **04** | `04_annotate_functional_sites.py` | Annotates variants with specific functional sites from *UniProt*. |
+| **05** | `05_annotate_germline_proximity.py` | Calculates distance to pathogenic germline variants from *ClinVar*. |
+| **06** | `06_mave_tsv_to_vcf.py` | Converts TSV to VCF format for liftover and VEP processing. |
+| **Manual**| *Assembly Liftover* | Uses **CrossMap** to convert coordinates from GRCh37 to GRCh38. |
+| **Manual**| *VEP Annotation* | Uses **Ensembl VEP** (via Docker) to annotate with *MaveDB* scores. |
+| **07** | `07_annotate_maves.py` | Integrates functional data from *MaveDB* into the full variant dataset. |
+| **08** | `08_annotate_tsg_og.R` | Adds TSG/Oncogene annotations from *NCG* using `geneOncoX`. |
 
-`03_annotate_protein_domains.py`: Annotates somatic cancer variants with protein domains from Pfam. 
-
-`04_annotate_functional_sites.py`: Annotates somatic cancer variants with functional sites from UniProt. 
-
-`05_annotate_germline_proximity.py`: Annotates somatic cancer variants with the distance to pathogenic germline variants from ClinVar. 
-
-`06_mave_tsv_to_vcf.py`: Converts .tsv files to .vcf files for assembly liftover and MAVE annotation. 
-
-`---Manual step: Assembly Liftover---`: Run CrossMap in terminal to convert coordinates from GRCh37 to GRCh38. 
-
-`---Manual step: VEP annotation---`: Run Ensembl VEP via Docker to annotate .VCF with MaveDB scores. 
-
-`07_annotate_maves.py`: Annotates somatic cancer variants with functional data from MaveDB. 
-
-`08_annotate_tsg_og.R`: Annotates somatic cancer variants with tumor suppressor- and oncogene annotations from NCG using the geneOncoX R package. 
+> **Note:** The manual steps (Liftover and VEP) are necessary because MAVE data integration requires GRCh38 coordinates and the specialized VEP plugin.
 
 
 ## Recommended Sources 🛜
