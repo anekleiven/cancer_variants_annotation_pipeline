@@ -3,7 +3,6 @@
 # UniProt Mapping
 #====================================================================
 
-
 # Script: 02_add_uniprot_mapping.R
 # Author: Ane Kleiven
 
