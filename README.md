@@ -38,7 +38,7 @@ Annotates variants with classification evidence:
 ## Prerequisites 📋
 
 This pipeline is designed to annotate variants that have already been labeled for oncogenicity. 
-Before running the scripts in this repository, please follow the instructions in this repository: 
+Before running the scripts in this repository, please complete the processing steps described here:
 
 [genie_oncokb_processing_scripts](https://github.com/anekleiven/genie_oncokb_processing_scripts)
 
