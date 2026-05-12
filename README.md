@@ -20,7 +20,7 @@ Annotates variants with classification evidence:
     preprocessing and OncoKB labeling (Prerequisites), followed by the functional feature 
     annotation steps (green) performed by the scripts in this repository. 
     The final output is a comprehensive annotated dataset ready for downstream 
-    analyses.
+    analyses. The figure was designed by the author and rendered using the Claude (Anthropic) language model.
   </figcaption>
 </figure>
 
