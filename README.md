@@ -25,8 +25,8 @@ Annotates variants with classification evidence:
 </figure>
 
 ## Requirements 💻
-- Python 3.10+
-- R 4.2+
+- Python 3.12+
+- R 4.3+
 
 ## Setup Instructions 🔧
 
