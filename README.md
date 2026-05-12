@@ -12,7 +12,7 @@ Annotates variants with classification evidence:
 
 <figure>
   <p align="center">
-    <img src="images/annotation_pipeline.png" alt="Pipeline" width="600">
+    <img src="images/annotation_pipeline.png" alt="Pipeline" width=100%>
   </p>
   <figcaption align="center">
     <b>Figure 1:</b> Annotation pipeline for somatic cancer variants. The input file is sequentially annotated with classification evidence 
