@@ -12,12 +12,17 @@ Annotates variants with classification evidence:
 
 <figure>
   <p align="center">
-    <img src="images/annotation_pipeline.png" alt="Pipeline" width=80%>
+    <img src="images/flowchart.png" alt="Pipeline" width="100%">
   </p>
   <figcaption align="center">
-    <b>Figure 1:</b> Annotation pipeline for somatic cancer variants. The input file is sequentially annotated with classification evidence 
-    (e.g. cancer mutation hotspots, protein domains, and functional sites), resulting in a final master file used for downstream analyses. 
-</figure>  
+    <b>Figure 1: Complete Data Processing and Annotation Pipeline.</b> 
+    The figure illustrates the end-to-end pipeline, starting from raw GENIE data 
+    preprocessing and OncoKB labeling (Prerequisites), followed by the functional feature 
+    annotation steps (green) performed by the scripts in this repository. 
+    The final output is a comprehensive annotated dataset ready for downstream 
+    analyses.
+  </figcaption>
+</figure>
 
 ## Requirements 💻
 - Python 3.10+

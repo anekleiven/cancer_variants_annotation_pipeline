@@ -3,4 +3,4 @@ output/
 data/
 .venv/
 /images/* 
-!/images/annotation_pipeline.png
+!/images/flowchart.png
