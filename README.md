@@ -6,10 +6,18 @@ Annotates variants with classification evidence:
 - Cancer hotspots from cancerhotspots.org
 - Protein domains from Pfam
 - Functional sites from UniProt
-- Pathogenic germline variant distances from ClinVar 
+- Pathogenic germline variant (PGV) distances from ClinVar (germline proximity)
 - Functional data from MaveDB
 - Tumor suppressor gene and oncogene annotations from the Network of Cancer Genes (NCG) 
 
+<figure>
+  <p align="center">
+    <img src="images/annotation_pipeline.png" alt="Dataflow" width="600">
+  </p>
+  <figcaption align="center">
+    <b>Figure 1:</b> Annotation pipeline for somatic cancer variants. The input file is sequentially annotated with classification evidence 
+    (e.g. cancer mutation hotspots, protein domains, and functional sites), resulting in a final master file used for downstream analyses. 
+</figure>  
 
 ## Requirements 💻
 - Python 3.10+

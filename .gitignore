@@ -2,3 +2,5 @@ data_cache/
 output/
 data/
 .venv/
+/images/* 
+!/images/annotation_pipeline.png
