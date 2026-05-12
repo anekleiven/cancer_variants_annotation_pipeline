@@ -12,7 +12,7 @@ Annotates variants with classification evidence:
 
 <figure>
   <p align="center">
-    <img src="images/flowchart.png" alt="Pipeline" width="100%">
+    <img src="images/flowchart.png" alt="Pipeline" width="90%">
   </p>
   <figcaption align="center">
     <b>Figure 1: Complete Data Processing and Annotation Pipeline.</b> 
