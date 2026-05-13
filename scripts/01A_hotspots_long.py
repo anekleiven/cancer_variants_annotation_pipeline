@@ -33,17 +33,15 @@ def get_args():
     parser.add_argument(
         "--input",
         type=Path,
-        required=False,
-        default="/home/anekl/git/master/cancer_variants_annotation_pipeline/data/hotspots.txt",
+        required=True,
         help="Path to the input hotspot file (e.g. hotspots.txt)."
     )
 
     parser.add_argument(
         "--output",
         type=Path, 
-        required=False,
-        default="/home/anekl/git/master/cancer_variants_annotation_pipeline/data/hotspots_long.tsv",
-        help="Path to the output hotspot file e.g. hotspots_long.tsv."
+        required=True,
+        help="Path to the output hotspot file (e.g. hotspots_long.tsv)."
     )
 
     return parser.parse_args()

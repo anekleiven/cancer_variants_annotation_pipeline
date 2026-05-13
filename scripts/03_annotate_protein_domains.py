@@ -46,32 +46,28 @@ def get_args():
     parser.add_argument(
         "--input",
         type=Path,
-        required=False,
-        default="data/variants_with_uniprot.tsv",
+        required=True,
         help="Path to the input file (e.g. data/variants_with_uniprot.tsv)"
     )
     
     parser.add_argument(
         "--pfam",
         type=Path,
-        required=False,
-        default="data/Pfam-A.regions.tsv.gz",
+        required=True,
         help="Path to the Pfam domain locations file (e.g. data/Pfam-A.regions.tsv.gz)"
     )
     
     parser.add_argument(
         "--pclan",
         type=Path,
-        required=False,
-        default="data/Pfam-A.clans.tsv.gz",
+        required=True,
         help="Path to the Pfam clan file (e.g. data/Pfam-A.clans.tsv.gz)"
     )
     
     parser.add_argument(
         "--output",
         type=Path, 
-        required=False,
-        default="output/variants_with_pfam_domains.tsv",
+        required=True,
         help="Path to save the annotated output TSV file"
     )
     

@@ -41,24 +41,21 @@ def get_args():
     parser.add_argument(
         "--input",
         type=Path,
-        required=False,
-        default="output/variants_with_pfam_domains.tsv",
+        required=True,
         help="Path to the input variant file (e.g. output/variants_with_pfam_domains.tsv)"
     )
 
     parser.add_argument(
         "--funcsites",
         type=Path,
-        required=False,
-        default="data/human_functional_sites.tsv",
+        required=True,
         help="Path to the functional sites file (e.g. data/human_functional_sites.tsv)"
     )
 
     parser.add_argument(
         "--output",
         type=Path, 
-        required=False,
-        default="output/variants_with_func_sites.tsv",
+        required=True,
         help="Path to the output variant file (e.g. output/variants_with_func_sites.tsv)"
     )
 

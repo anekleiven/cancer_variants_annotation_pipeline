@@ -30,24 +30,21 @@ def get_args():
 	parser.add_argument(
 		"--input",
 		type=Path,
-		default="/home/anekl/git/master/genie_oncokb_processing_scripts/data/annotated_output.maf",
-		required=False, 
-		help="Path to the input file (e.g.annotated_output.maf)"
+		required=True, 
+		help="Path to the input file (e.g. annotated_output.maf)"
 	)
 	
 	parser.add_argument(
 		"--hotspots",
 		type=Path,
-		default="/home/anekl/git/master/cancer_variants_annotation_pipeline/data/hotspots_long.tsv",
-		required=False, 
-		help="Path to the cancer hotspots file (long format)"
+		required=True, 
+		help="Path to the cancer hotspots file (e.g. hotspots_long.tsv)"
 	)
 
 	parser.add_argument(
 		"--output",
 		type=Path,
-		required=False,
-		default="/home/anekl/git/master/cancer_variants_annotation_pipeline/output/annotated_with_hotspots.tsv",
+		required=True,
 		help="Path to save the annotated output file (e.g. annotated_with_hotspots.tsv)."
 	)
 	

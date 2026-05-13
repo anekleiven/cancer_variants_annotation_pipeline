@@ -39,50 +39,44 @@ def getargs():
     parser.add_argument(
         "--mave_somatic", 
         type=Path, 
-        required=False, 
-        default="output/somatic_variants_with_maves.vcf",
+        required=True,
         help="Path to the MAVE annotated input file with somatic variants."
     )
 
     parser.add_argument(
         "--mave_neutral_clinvar", 
         type=Path, 
-        required=False, 
-        default="output/neutral_clinvar_with_maves.vcf",
+        required=True,
         help="Path to the MAVE annotated input file with neutral germline ClinVar variants."
     )
 
     parser.add_argument(
         "--somatic_variants", 
         type=Path, 
-        required=False, 
-        default="output/variants_with_germline_proximity.tsv",
-        help="Path to the somatic variant file."
+        required=True,
+        help="Path to the somatic variant file (e.g. variants_with_germline_proximity.tsv)."
     )
 
     parser.add_argument(
         "--neutral_clinvar", 
         type=Path,
-        required=False, 
-        default="output/neutral_clinvar_filtered.tsv", 
-        help="Path to the ClinVar variant file containing neutral germline variants."
+        required=True,
+        help="Path to the ClinVar variant file containing neutral germline variants (e.g neutral_clinvar_filtered.tsv)."
 
     )
 
     parser.add_argument(
         "--output_somatic",
         type=Path,
-        required=False,
-        default="output/variants_with_maves.tsv",
-        help="Path to the annotated output variant file (e.g. output/variants_with_maves.tsv)"
+        required=True,
+        help="Path to the annotated output variant file (e.g. output/variants_with_maves.tsv)."
     )
 
     parser.add_argument(
         "--output_neutral_clinvar",
         type=Path, 
-        required=False, 
-        default="output/clinvar_with_maves.tsv",
-        help="Path to the annotated .tsv file from ClinVar."
+        required=True, 
+        help="Path to the annotated variant file from ClinVar (e.g. clinvar_with_maves.tsv)."
     )
 
     return parser.parse_args() 

@@ -42,24 +42,21 @@ def getargs():
   parser.add_argument(
     "--input", 
     type=Path, 
-    required=False,
-    default="output/variants_with_func_sites.tsv",
+    required=True,
     help="Path to the variant input file (e.g. output/variants_with_func_sites.tsv)"
   )
 
   parser.add_argument(
     "--germline_variant_file",
     type=Path,
-    required=False, 
-    default="data/variant_summary.txt.gz",
+    required=True,
     help="Path to the germline variant file (e.g. data/variant_summary.txt)"
   )
 
   parser.add_argument(
     "--output",
     type=Path,
-    required=False,
-    default="output/variants_with_germline_proximity.tsv",
+    required=True,
     help="Path to the annotated output variant file (e.g. output/variants_with_germline_proximity.tsv)"
   )
 

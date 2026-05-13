@@ -35,32 +35,28 @@ def getargs():
   parser.add_argument(
     "--somatic_variants", 
     type=Path, 
-    required=False,
-    default="output/variants_with_germline_proximity.tsv",
+  required=True,
     help="Path to the variant input file (e.g. output/variants_with_germline_proximity.tsv)"
   )
 
   parser.add_argument(
      "--neutral_clinvar",
      type=Path, 
-     required=False,
-     default= "output/neutral_clinvar_filtered.tsv",
+     required=True,
      help="Path to the neutral variant file from ClinVar"
   )
 
   parser.add_argument(
     "--somatic_output",
     type=Path,
-    required=False,
-    default="output/somatic_variants_GRCh37.vcf",
+    required=True,
     help="Path to the annotated output variant file (e.g. output/somatic_variants_GRCh37.vcf)"
   )
 
   parser.add_argument(
      "--clinvar_output",
      type=Path, 
-     required=False,
-     default= "output/neutral_clinvar_GRCh37.vcf",
+     required=True,
      help="Path to the Clinvar vcf output file."
   )
 

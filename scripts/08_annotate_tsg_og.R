@@ -32,7 +32,7 @@ args <- commandArgs(trailingOnly = TRUE)
 
 if (length(args) < 2) {
   message("\nUsage: Rscript scripts/08_annotate_tsg_og.R <input_file> <output_file> [cache_dir]")
-  message("Example: Rscript scripts/08_annotate_tsg_og.R output/variants_with_maves.tsv output/variants_tsg_og.tsv data_cache\n")
+  message("Example: Rscript scripts/08_annotate_tsg_og.R output/variants_tsg_og.tsv data_cache\n")
   stop("Missing required arguments. Please provide at least input and output file paths.")
 }
 
